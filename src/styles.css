@@ -1076,3 +1076,12 @@ body[data-view="studio"] .view-studio { display: grid; }
 .ad-sprig-tl { top: 7px; left: 7px; } .ad-sprig-tr { top: 7px; right: 7px; }
 .ad-sprig-bl { bottom: 7px; left: 7px; } .ad-sprig-br { bottom: 7px; right: 7px; }
 @media (max-width: 400px) { .ad-frame { padding: 18px 14px 14px; } .ad-sprig { width: 18px; height: 18px; } }
+
+/* native ads resize to fit, so give them the frame's full width */
+.ad-slot:has(.ad-frame-native) { justify-items: stretch; }
+.ad-frame-native { width: min(100%, 980px); margin: 0 auto; }
+.ad-native { position: relative; z-index: 1; min-height: 40px; overflow: hidden; }
+.ad-in-panel .ad-frame-native { width: 100%; }
+
+.ad-waiting { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.ad-note { position: relative; z-index: 1; margin: 6px 0 0; text-align: center; font-size: .74rem; color: var(--muted); }

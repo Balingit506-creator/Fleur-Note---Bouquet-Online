@@ -30,6 +30,12 @@ const config = {
   //   narrow → shown on phones, e.g. 320×50 (leave key empty to use only the wide one)
   // While both keys are empty no ads load on the live site.
   ads: {
+    // Native Banner: from its code, the script's src="…" and the container's id="…".
+    // When set, the ad spots show this native ad (it resizes to fit) instead of the banners below.
+    native: {
+      src: 'https://bauval.org/21/f9f85b6a3731dbb70e361968dd35e6cb',
+      containerId: 'container-f9f85b6a3731dbb70e361968dd35e6cb',
+    },
     scriptHost: 'www.highperformanceformat.com',
     wide: { key: '', width: 728, height: 90 },
     narrow: { key: '', width: 320, height: 50 },

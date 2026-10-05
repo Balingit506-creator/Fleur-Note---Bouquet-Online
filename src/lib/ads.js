@@ -9,7 +9,18 @@ const unit = (u) => (u && /^[a-f0-9]{16,64}$/i.test(u.key || '') && u.width > 0 
 
 export const AD_WIDE = HOST ? unit(ADS.wide) : null;
 export const AD_NARROW = HOST ? unit(ADS.narrow) : null;
-export const adsReady = !!(AD_WIDE || AD_NARROW);
+
+// Native Banner: one script that fills a container with that id.
+export const AD_NATIVE = (() => {
+  const n = ADS.native || {};
+  try {
+    const u = new URL(n.src || '');
+    if (u.protocol !== 'https:' || !/^container-[A-Za-z0-9_-]{8,80}$/.test(n.containerId || '')) return null;
+    return { src: u.href, containerId: n.containerId };
+  } catch { return null; }
+})();
+
+export const adsReady = !!(AD_NATIVE || AD_WIDE || AD_NARROW);
 // Live site: no slots until a banner is set up. Locally, placeholders show where they'll go.
 export const showAds = adsReady || isLocal;
 
