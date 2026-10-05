@@ -426,7 +426,7 @@ body[data-view="studio"] .view-studio { display: grid; }
 .font-script .letter-msg { font: 1.75rem/1.45 var(--script); }
 .font-serif .letter-msg { font: italic 400 1.35rem/1.55 var(--serif); }
 .font-hand .letter-msg { font: 400 1.55rem/1.4 var(--hand); }
-.reveal-actions { grid-column: 1 / -1; display: flex; justify-content: center; gap: 12px; animation: fade-up .6s ease 1.8s both; }
+.reveal-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 
 /* ---------- toast ---------- */
 .toast {
@@ -1132,3 +1132,82 @@ body[data-view="studio"] .view-studio { display: grid; }
 .music-card.mini.yt-failed .mc-yt { width: 140px; }
 /* room at the end of the page so the buttons can scroll clear of the music card */
 .view-viewer .reveal { padding-bottom: 140px; }
+
+/* ---------- recipient action buttons ---------- */
+.act {
+  --glow: color-mix(in srgb, var(--gold) 45%, transparent);
+  position: relative; display: inline-flex; align-items: center; gap: .6em; overflow: hidden;
+  padding: .7em 1.25em .7em .8em; border-radius: 999px; cursor: pointer; text-decoration: none;
+  font: 500 .86rem/1 var(--sans); letter-spacing: .03em; color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--gold) 38%, var(--line-strong));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 92%, #fff 8%), var(--card));
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 6px 16px -12px rgba(0, 0, 0, .5);
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1.3), box-shadow .3s ease, border-color .3s ease, background .3s ease;
+  animation: act-in .7s cubic-bezier(.2, .8, .2, 1.15) both;
+}
+.act:nth-child(1) { animation-delay: 1.8s; }
+.act:nth-child(2) { animation-delay: 1.92s; }
+.act:nth-child(3) { animation-delay: 2.04s; }
+.act:nth-child(4) { animation-delay: 2.16s; }
+@keyframes act-in { from { opacity: 0; transform: translateY(18px) scale(.92); } }
+.act:hover, .act:focus-visible {
+  transform: translateY(-3px); border-color: var(--gold);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--gold) 14%, transparent), 0 14px 26px -14px var(--glow);
+}
+.act:active { transform: translateY(0) scale(.96); transition-duration: .1s; }
+.act:focus-visible { outline: none; }
+.act:disabled { cursor: progress; }
+.act:disabled:not(.busy) { opacity: .45; }
+
+.act-icon {
+  position: relative; display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%;
+  color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, transparent);
+  transition: background .3s ease, color .3s ease, transform .4s cubic-bezier(.2, .8, .2, 1.4);
+}
+.act-icon svg { width: 17px; height: 17px; overflow: visible; transition: opacity .2s; }
+.act:hover .act-icon { background: var(--gold); color: var(--card); }
+/* each icon moves its own way on hover */
+.act-replay .act-icon svg { transition: transform .6s cubic-bezier(.3, .7, .3, 1.2); }
+.act-replay:hover .act-icon svg { transform: rotate(-300deg); }
+.act-picture .sun { transition: transform .5s cubic-bezier(.2, .8, .2, 1.5); }
+.act-picture:hover .sun { transform: translateY(-2px); }
+.act-picture:hover .act-icon { transform: rotate(-8deg) scale(1.08); }
+.act-video .lens { transform-box: fill-box; transform-origin: left center; }
+.act-video:hover .lens { animation: lens-pulse .9s ease-in-out infinite; }
+@keyframes lens-pulse { 50% { transform: scaleX(1.25) scaleY(1.1); } }
+
+/* the main action: soft pink, a heartbeat and a slow shimmer */
+.act-send {
+  color: var(--accent-ink); border-color: transparent; letter-spacing: .08em; text-transform: uppercase; font-size: .8rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent) 55%, color-mix(in srgb, var(--accent) 80%, #000));
+  box-shadow: 0 10px 24px -12px var(--accent);
+}
+.act-send .act-icon { color: var(--accent-ink); background: color-mix(in srgb, var(--accent-ink) 18%, transparent); }
+.act-send:hover { border-color: transparent; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent), 0 16px 30px -12px var(--accent); }
+.act-send:hover .act-icon { background: var(--accent-ink); color: var(--accent); }
+.act-send .heart { fill: currentColor; fill-opacity: .25; transform-box: fill-box; transform-origin: center; animation: heartbeat 2.4s ease-in-out 3s infinite; }
+.act-send:hover .heart { fill-opacity: 1; animation-duration: .9s; animation-delay: 0s; }
+@keyframes heartbeat { 0%, 40%, 100% { transform: scale(1); } 10% { transform: scale(1.22); } 20% { transform: scale(.95); } 30% { transform: scale(1.12); } }
+.act-send::after {
+  content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%; pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .45), transparent); transform: skewX(-18deg);
+  animation: shimmer 4.5s ease-in-out 3s infinite;
+}
+@keyframes shimmer { 0% { left: -60%; } 30%, 100% { left: 130%; } }
+
+/* busy: a spinner replaces the icon */
+.act-spin { position: absolute; inset: 6px; border-radius: 50%; border: 1.8px solid color-mix(in srgb, var(--gold) 30%, transparent); border-top-color: var(--gold); opacity: 0; }
+.act.busy .act-icon svg { opacity: 0; }
+.act.busy .act-spin { opacity: 1; animation: spin .8s linear infinite; }
+.act.busy { border-color: var(--gold); }
+.act.busy .act-icon { background: color-mix(in srgb, var(--gold) 14%, transparent); transform: none; }
+
+@media (max-width: 520px) {
+  .reveal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .act { justify-content: flex-start; padding: .65em .9em .65em .6em; font-size: .8rem; }
+  .act-send { grid-column: 1 / -1; justify-content: center; order: 3; }
+  .act-replay { grid-column: 1 / -1; justify-content: center; order: 4; }
+}
+/* on the recipient's page messages show at the top, clear of the buttons */
+.view-viewer ~ .toast { top: 20px; bottom: auto; transform: translate(-50%, -20px); }
+.view-viewer ~ .toast.show { transform: translate(-50%, 0); }

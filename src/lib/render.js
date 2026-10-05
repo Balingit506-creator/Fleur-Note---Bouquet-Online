@@ -247,7 +247,7 @@ async function loadPhotos(st) {
 
 /* ---------- the keepsake scene: bouquet, photos and letter, shared by the image and the video ---------- */
 async function keepsake(st) {
-  const { W, H } = CLIP;
+  const { W } = CLIP;
   const { wrap, blooms, sprigs, addons, imgs, ribbonImg } = await prepare(st, 1200);
   const photos = await loadPhotos(st);
   await Promise.all(['48px "Pinyon Script"', 'italic 40px "Cormorant Garamond"', '40px "Caveat"', '20px "Jost"'].map((f) => document.fonts.load(f).catch(() => {})));
@@ -257,15 +257,27 @@ async function keepsake(st) {
   const paper = paperOf(st.card.paper);
   const cardW = 820, padX = 56;
   const measure = canvas(10, 10).getContext('2d');
-  measure.font = canvasFont(font, font === 'hand' ? 44 : font === 'serif' ? 38 : 42);
-  const msgLines = wrapLines(measure, msg || 'Just because.', cardW - padX * 2, 4);
-  const lineH = font === 'serif' ? 50 : 56;
-  const cardH = 64 + 64 + msgLines.length * lineH + (from ? 70 : 20) + 30;
-  // bouquet placement: top of the frame, scaled down if a long letter needs the room,
-  // so the card sits just below the bow (and the photos) and never covers the bouquet
   const bottom = photos.length ? 805 : 752; // photos hang a little below the bouquet
-  const BY = 18, K = Math.min(1.16, (H - cardH - 50 - BY) / bottom), BX = (W - 600 * K) / 2;
+  const BY = 18;
+  // The whole letter is always shown. For long letters the text gets a little smaller and the
+  // bouquet a little smaller; if it still doesn't fit, the frame grows taller.
+  let fs = 1, msgLines, lineH, cardH, K;
+  for (;;) {
+    measure.font = canvasFont(font, Math.round((font === 'hand' ? 44 : font === 'serif' ? 38 : 42) * fs));
+    msgLines = wrapLines(measure, msg || 'Just because.', cardW - padX * 2, Infinity);
+    lineH = Math.round((font === 'serif' ? 50 : 56) * fs);
+    cardH = 64 + 64 + msgLines.length * lineH + (from ? 70 : 20) + 30;
+    K = Math.min(1.16, (CLIP.H - cardH - 50 - BY) / bottom);
+    if (K >= 0.85 || fs <= 0.75) break;
+    fs -= 0.05;
+  }
+  K = Math.max(K, 0.85);
+  const H = Math.max(CLIP.H, Math.ceil((BY + bottom * K + cardH + 50) / 2) * 2); // even, for video encoders
+  const BX = (W - 600 * K) / 2;
   const cardY = Math.min(BY + bottom * K, H - cardH - 50);
+  const msgFont = canvasFont(font, Math.round((font === 'hand' ? 44 : font === 'serif' ? 38 : 42) * fs));
+  // long letters stay on screen longer in the video, so there's time to read them
+  const dur = Math.min(16, CLIP.DUR + Math.max(0, msgLines.length - 4) * 0.45);
   const greens = sprigs.length ? greeneryLayer(sprigs, wrap, imgs, K) : null;
   const stemLayer = canvas(600 * K, 760 * K);
   const sx = stemLayer.getContext('2d');
@@ -286,7 +298,7 @@ async function keepsake(st) {
   }));
 
   // draws the scene at time t (seconds) onto ctx; scale draws it larger, still leaves out the petals in front
-  return (ctx, t, { scale = 1, still = false } = {}) => {
+  const draw = (ctx, t, { scale = 1, still = false } = {}) => {
     const drawPetal = (p) => {
       const y = ((p.y + p.vy * t) % (H + 80) + H + 80) % (H + 80) - 40;
       const x = p.x + Math.sin(t * p.sp + p.ph) * p.sway;
@@ -410,7 +422,7 @@ async function keepsake(st) {
       ctx.font = canvasFont('script', 58);
       ctx.fillText(to ? `Dear ${to},` : 'For you,', padX, 104);
       ctx.fillStyle = paper.ink;
-      ctx.font = canvasFont(font, font === 'hand' ? 44 : font === 'serif' ? 38 : 42);
+      ctx.font = msgFont;
       msgLines.forEach((line, i) => ctx.fillText(line, padX, 104 + 64 + i * lineH));
       if (from) {
         ctx.fillStyle = paper.soft;
@@ -430,6 +442,7 @@ async function keepsake(st) {
     ctx.textAlign = 'left';
     ctx.globalAlpha = 1;
   };
+  return Object.assign(draw, { W, H, dur });
 }
 
 /* ---------- still image: the finished keepsake ---------- */
@@ -438,9 +451,9 @@ export async function exportPNG(st, toast) {
   toast('Preparing your picture…');
   try {
     const S = 2; // 2160 × 2700
-    const c = canvas(CLIP.W * S, CLIP.H * S);
     const draw = await keepsake(st);
-    draw(c.getContext('2d'), CLIP.DUR, { scale: S, still: true });
+    const c = canvas(draw.W * S, draw.H * S);
+    draw(c.getContext('2d'), draw.dur, { scale: S, still: true });
     const blob = await new Promise((res, rej) => {
       try { c.toBlob((b) => (b ? res(b) : rej(new Error('empty'))), 'image/png'); } catch (err) { rej(err); }
     });
@@ -470,6 +483,8 @@ export async function recordClip(st, toast) {
     toast('Preparing your video…');
     const ctx = cv.getContext('2d');
     const draw = await keepsake(st);
+    cv.width = draw.W; cv.height = draw.H; // taller for long letters
+    const DUR = draw.dur;
     const drawFrame = (t) => draw(ctx, t);
 
     drawFrame(0);
@@ -492,7 +507,7 @@ export async function recordClip(st, toast) {
       const t0 = performance.now();
       const step = () => {
         const t = (performance.now() - t0) / 1000;
-        drawFrame(Math.min(t, CLIP.DUR));
+        drawFrame(Math.min(t, DUR));
         onTick?.(t);
         if (t < seconds) requestAnimationFrame(step); else rec.stop();
       };
@@ -507,8 +522,8 @@ export async function recordClip(st, toast) {
     if (!mime) throw new Error('This browser couldn’t record the video. Try Chrome, Edge or Safari.');
 
     let shown = -1;
-    const blob = await record(mime, CLIP.DUR, (t) => {
-      const pct = Math.min(100, Math.round((t / CLIP.DUR) * 100));
+    const blob = await record(mime, DUR, (t) => {
+      const pct = Math.min(100, Math.round((t / DUR) * 100));
       if (Math.floor(pct / 10) !== shown) { shown = Math.floor(pct / 10); toast(`Recording your bouquet… ${pct}%`); }
     });
 

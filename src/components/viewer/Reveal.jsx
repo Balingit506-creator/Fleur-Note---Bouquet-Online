@@ -11,7 +11,13 @@ export default function Reveal({ st, onOpenAgain, onSendBack }) {
   const svgRef = useRef(null);
   const [reading, setReading] = useState(false);
   const [photo, setPhoto] = useState(null); // index of the photo shown large
+  const [busy, setBusy] = useState(null); // 'picture' | 'video' while one is being made
   const n = st.photos.length;
+  const save = async (kind, make) => {
+    if (busy) return;
+    setBusy(kind);
+    try { await make(st, toast); } finally { setBusy(null); }
+  };
 
   useEffect(() => { window.scrollTo({ top: 0 }); }, []);
 
@@ -25,16 +31,36 @@ export default function Reveal({ st, onOpenAgain, onSendBack }) {
       </div>
       <Letter st={st} onClick={() => setReading(true)} />
       <div className="reveal-actions">
-        <button className="chip" type="button" id="btn-replay" onClick={onOpenAgain}>Open again</button>
-        <button className="chip" type="button" id="btn-save-picture" onClick={() => exportPNG(st, toast)}>Save as picture</button>
-        <button className="chip" type="button" id="btn-save-video" onClick={() => recordClip(st, toast)}>Save as video</button>
-        <a className="btn btn-small" href="#studio" onClick={onSendBack}>Send one back</a>
+        <button className="act act-replay" type="button" id="btn-replay" onClick={onOpenAgain}>
+          <ActIcon><path d="M4 12a8 8 0 1 0 2.4-5.7" /><path d="M4 4v4.5h4.5" /></ActIcon>
+          <span>Open again</span>
+        </button>
+        <button className={`act act-picture${busy === 'picture' ? ' busy' : ''}`} type="button" id="btn-save-picture" disabled={!!busy} aria-busy={busy === 'picture'} onClick={() => save('picture', exportPNG)}>
+          <ActIcon><rect x="3.5" y="5" width="17" height="14" rx="2.5" /><circle className="sun" cx="9" cy="10" r="1.8" /><path d="M4 17l5-4.5 3.5 3 3-2.5 4.5 4" /></ActIcon>
+          <span>Save as picture</span>
+        </button>
+        <button className={`act act-video${busy === 'video' ? ' busy' : ''}`} type="button" id="btn-save-video" disabled={!!busy} aria-busy={busy === 'video'} onClick={() => save('video', recordClip)}>
+          <ActIcon><rect x="3" y="6.5" width="12.5" height="11" rx="2.5" /><path className="lens" d="M15.5 10.5l5-3v9l-5-3z" /></ActIcon>
+          <span>Save as video</span>
+        </button>
+        <a className="act act-send" href="#studio" onClick={onSendBack}>
+          <ActIcon><path className="heart" d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" /></ActIcon>
+          <span>Send one back</span>
+        </a>
       </div>
       {reading && <Reader st={st} onClose={() => setReading(false)} />}
       {photo != null && <Lightbox photos={st.photos} index={photo} setIndex={setPhoto} onClose={() => setPhoto(null)} />}
     </section>
   );
 }
+
+// A button icon; while its button is busy a spinner takes its place.
+const ActIcon = ({ children }) => (
+  <span className="act-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+    <i className="act-spin" />
+  </span>
+);
 
 /* ---------- the letter ---------- */
 function LetterBody({ st }) {
