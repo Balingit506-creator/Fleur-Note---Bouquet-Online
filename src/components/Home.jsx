@@ -14,6 +14,7 @@ import Ideas from './Ideas.jsx';
 export default function Home({ anchor }) {
   const demo = useMemo(() => {
     const st = applyOccasionTo(freshState(), OCCASIONS[0], 20240214);
+    st.addons = st.addons.filter((id) => !/fluffy_heart/.test(id)); // the hero shows the teddy only
     // no photos on the hero, so the teddy can sit low beside the wrap instead of over the flowers
     const teddy = findAddon('teddy');
     if (teddy) st.addonPos = { ...st.addonPos, [teddy.id]: { x: 118, y: 640 } };
