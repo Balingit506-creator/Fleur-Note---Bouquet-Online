@@ -1085,3 +1085,13 @@ body[data-view="studio"] .view-studio { display: grid; }
 
 .ad-waiting { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .ad-note { position: relative; z-index: 1; margin: 6px 0 0; text-align: center; font-size: .74rem; color: var(--muted); }
+
+/* slimmer frame: a thin gold border hugging the ad */
+.ad-frame {
+  padding: 12px 12px 10px; border-radius: 8px;
+  box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 3px color-mix(in srgb, var(--gold) 30%, transparent), var(--shadow);
+}
+.ad-sprig { width: 15px; height: 15px; opacity: .6; }
+.ad-sprig-tl { top: 4px; left: 4px; } .ad-sprig-tr { top: 4px; right: 4px; }
+.ad-sprig-bl { bottom: 4px; left: 4px; } .ad-sprig-br { bottom: 4px; right: 4px; }
+@media (max-width: 400px) { .ad-frame { padding: 11px 8px 8px; } .ad-sprig { width: 12px; height: 12px; } }

@@ -34,12 +34,5 @@
     "y": 196,
     "w": 118,
     "layer": "back"
-  },
-  "addon_puppy_charm.webp": {
-    "x": 236,
-    "y": 668,
-    "w": 84,
-    "layer": "top",
-    "hidden": true
   }
 }
