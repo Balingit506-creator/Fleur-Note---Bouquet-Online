@@ -37,19 +37,32 @@ when the recipient breaks the wax seal, and a small button lets them pause it.
 **Photos:** by default up to 3 photos are shrunk (about 27 KB each) and stored inside the share link.
 The Send step shows the link size. Links over about 60 KB still work in browsers and email, but some chat apps may cut them off.
 
-### Optional photo storage (still a static site)
+### Short links with Supabase (still a static site)
 
-For full-quality photos (up to 5) and short links, photos can upload straight from the browser to a free
-[Supabase](https://supabase.com) storage bucket. There's still no server of your own.
+Without any setup, the whole bouquet travels inside the link, which makes links long (and too long for a
+QR code once photos are added). With a free [Supabase](https://supabase.com) project, each bouquet is saved
+there and the link carries only its id, like `https://your-site/#s=k3Hq9xTbQw`. Photos upload at full quality
+(up to 5). There's still no server of your own: the browser talks to Supabase directly.
 
-1. Create a free Supabase project. In **Storage**, create a bucket named `bouquet-photos` and mark it **Public**. Set a file size limit (e.g. 5 MB) and allowed types `image/jpeg`.
-2. In **Storage → Policies**, add an `INSERT` policy on that bucket for the `anon` role (Supabase has a template for this). Don't allow update or delete.
-3. In **Project Settings → API**, copy the Project URL and the `anon` public key into `src/config.js`:
+1. Create a free Supabase project at [supabase.com](https://supabase.com) (sign in with GitHub).
+2. Open **SQL Editor → New query**, paste all of [`supabase/setup.sql`](supabase/setup.sql), and press **Run**.
+   This creates the `bouquets` table and the `bouquet-photos` bucket with safe permissions.
+3. In **Project Settings → API**, copy the **Project URL** and the **anon public** key into `src/config.js`:
    ```js
    storage: { provider: 'supabase', url: 'https://xxxx.supabase.co', anonKey: 'eyJ…', bucket: 'bouquet-photos' },
    ```
 
-The anon key is meant to be public, but anyone with it can upload to that bucket. Keep the size and type limits on, and clear out old files now and then if you need to.
+Good to know:
+- The anon key is meant to be public. With it, visitors can only save a bouquet or open one by its exact id.
+  They can't list, change or delete bouquets.
+- Every bouquet and photo is encrypted in the browser before it's uploaded. The key exists only in the share
+  link (after the `#`, which browsers never send to a server), so Supabase, and you as the owner, only ever see
+  scrambled data. Photo files have long random names and the bucket can't be listed.
+  Password-locked bouquets are also locked with the password.
+- Whoever has a link can still open that bouquet (and screenshot it), so the link is what to keep private.
+- If saving fails (offline, or the project is paused), the site quietly falls back to a full-length link.
+- Free projects pause after a week with no visits. While paused, short links don't open; press **Restore** in the
+  Supabase dashboard to bring them back. Links made before the setup keep working either way.
 
 ## Adding your own artwork
 

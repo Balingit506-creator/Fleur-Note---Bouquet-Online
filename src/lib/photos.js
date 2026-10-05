@@ -1,5 +1,6 @@
 // Turning an uploaded image into something the share link (or the photo bucket) can carry.
 import { CLOUD } from './bouquet.js';
+import { uploadPhoto } from './cloud.js';
 
 export async function preparePhoto(file) {
   let bmp;
@@ -15,7 +16,13 @@ export async function preparePhoto(file) {
     g.drawImage(bmp, 0, 0, c.width, c.height);
     return c;
   };
-  if (CLOUD) return uploadPhoto(await new Promise((res) => draw(1600).toBlob(res, 'image/jpeg', 0.85)));
+  if (CLOUD) {
+    try {
+      return await uploadPhoto(await new Promise((res) => draw(1600).toBlob(res, 'image/jpeg', 0.85)));
+    } catch (err) {
+      console.warn('Photo upload failed, carrying it inside the link instead.', err); // e.g. the project is paused
+    }
+  }
   // Inside the link every byte counts: step size and quality down until the photo fits the budget.
   const BUDGET = 36000; // base64 characters, about 27 KB
   let url = '';
@@ -26,15 +33,4 @@ export async function preparePhoto(file) {
     if (url.length <= BUDGET) break;
   }
   return url;
-}
-
-async function uploadPhoto(blob) {
-  const name = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}.jpg`;
-  const res = await fetch(`${CLOUD.url}/storage/v1/object/${CLOUD.bucket}/${name}`, {
-    method: 'POST',
-    headers: { apikey: CLOUD.anonKey, Authorization: `Bearer ${CLOUD.anonKey}`, 'Content-Type': 'image/jpeg' },
-    body: blob,
-  });
-  if (!res.ok) throw new Error(`Upload failed (${res.status}): ${await res.text()}`);
-  return `${CLOUD.url}/storage/v1/object/public/${CLOUD.bucket}/${name}`;
 }

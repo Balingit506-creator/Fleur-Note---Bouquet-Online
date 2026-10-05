@@ -4,6 +4,7 @@ import { FONTS, PILE_BOX, paperProps } from '../../lib/constants.js';
 import { addonAt, alphaMap } from '../../lib/hit.js';
 import { byId, clamp, randSeed } from '../../lib/util.js';
 import Bouquet from '../Bouquet.jsx';
+import Photo from '../Photo.jsx';
 
 /* The live preview: drag blooms and add-ons, see the gift tag and where the photos will go. */
 export default function Stage({ state, update, fresh, onPhotos }) {
@@ -135,7 +136,7 @@ function PhotoSlot({ state, svgRef, stageRef, onClick }) {
           {photos.slice(0, 3).map((p, i) => (
             <span key={i} className="sp-card pf" data-frame={photoFrame}
               style={{ '--r': `${PILE_TILT[i][0]}deg`, '--ox': `${PILE_TILT[i][1]}%`, '--oy': `${PILE_TILT[i][2]}%`, zIndex: i + 1 }}>
-              <i className="pf-deco" /><img src={p.src} alt="" />
+              <i className="pf-deco" /><Photo src={p.src} />
             </span>
           ))}
           <span className="sp-label sp-count">{count}</span>

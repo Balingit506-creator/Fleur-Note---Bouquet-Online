@@ -1,6 +1,7 @@
 // Password-locked links: the bouquet is encrypted inside the link (AES-GCM, key from PBKDF2).
-import { shareBase } from './bouquet.js';
-import { bouquetLink, sealedPayload } from './link.js';
+import { CLOUD, shareBase } from './bouquet.js';
+import { saveBouquet } from './cloud.js';
+import { bouquetLink, canCompress, pack, sealedPayload } from './link.js';
 
 const b64u = {
   enc: (bytes) => { let s = ''; bytes.forEach((b) => (s += String.fromCharCode(b))); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
@@ -33,14 +34,27 @@ export async function unseal(str, pw) {
 export const lockReady = (lock) => !lock.on || lock.pw.length >= 4;
 
 export async function makeLink(st, lock) {
+  if (lock.on && !window.crypto?.subtle) throw new Error('Password links need the site to be opened over https or localhost.');
+  const hint = lock.hint.trim();
+  const makeSealed = async () => seal(await sealedPayload(st), lock.pw);
+  if (CLOUD && canCompress) {
+    // short link: the bouquet (encrypted first when locked) is saved, the link carries only its id
+    const body = async () => (lock.on
+      ? `e:${await makeSealed()}${hint ? `.${encodeURIComponent(hint)}` : ''}`
+      : `z:${await pack(st)}`);
+    try {
+      return `${shareBase()}#s=${await saveBouquet(JSON.stringify([st, lock.on && [lock.pw, hint]]), body)}`;
+    } catch (err) {
+      console.warn('Short link failed, using a full link instead.', err);
+    }
+  }
   if (!lock.on) return bouquetLink(st);
-  if (!window.crypto?.subtle) throw new Error('Password links need the site to be opened over https or localhost.');
-  const hint = lock.hint.trim() ? `&h=${encodeURIComponent(lock.hint.trim())}` : '';
-  return `${shareBase()}#e=${await seal(await sealedPayload(st), lock.pw)}${hint}`;
+  return `${shareBase()}#e=${await makeSealed()}${hint ? `&h=${encodeURIComponent(hint)}` : ''}`;
 }
 
 // Sealed links carry the same bouquet encrypted (about a third longer).
 export const estimateLinkSize = async (st, lock) => {
+  if (CLOUD && canCompress) return shareBase().length + 13;
   const n = (await bouquetLink(st)).length;
   return lock.on ? Math.round(n * 1.34 + 60 + lock.hint.length * 3) : n;
 };

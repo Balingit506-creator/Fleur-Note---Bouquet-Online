@@ -18,6 +18,7 @@ function parseRoute(hash) {
     return { view: 'viewer', sealed: q.get('e') || '', hint: q.get('h') || '' };
   }
   if (hash.startsWith('#z=')) return { view: 'viewer', packed: hash.slice(3) };
+  if (hash.startsWith('#s=')) return { view: 'viewer', stored: hash.slice(3) };
   if (hash.startsWith('#b=')) {
     const st = decode(hash.slice(3));
     return st && st.stems.length ? { view: 'viewer', st } : { view: 'bad-link' };

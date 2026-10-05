@@ -9,6 +9,7 @@ import Music from '../../lib/music.js';
 import { exportPNG, recordClip } from '../../lib/render.js';
 import { byId, copyText } from '../../lib/util.js';
 import Donate from '../Donate.jsx';
+import QrDialog from './QrDialog.jsx';
 
 /* ---------- 7. send ---------- */
 export default function Send({ state, lock, setLock, onStartOver }) {
@@ -59,6 +60,11 @@ export default function Send({ state, lock, setLock, onStartOver }) {
       if (win) { win.opener = null; win.location.href = link; } else window.open(link, '_blank', 'noopener');
     } catch (err) { win?.close(); toast(err.message); }
   };
+  const [qrLink, setQrLink] = useState(null);
+  const showQr = async () => {
+    if (!guard()) return;
+    try { setQrLink(await makeLink(state, lock)); } catch (err) { toast(err.message); }
+  };
   const setLockField = (k) => (e) => { const v = k === 'on' ? e.target.checked : e.target.value; setLock((l) => ({ ...l, [k]: v })); };
 
   return (
@@ -101,6 +107,7 @@ export default function Send({ state, lock, setLock, onStartOver }) {
       )}
       <div className="send-actions">
         <button className="btn" type="button" disabled={!ready} onClick={copy}>Copy private link</button>
+        <button className="btn btn-ghost" type="button" disabled={!ready} onClick={showQr}>Show QR code</button>
         <button className="btn btn-ghost" type="button" disabled={!ready} onClick={preview}>Preview as recipient</button>
         <button className="btn btn-ghost" type="button" disabled={!ready} onClick={() => exportPNG(state, toast)}>Download bouquet image</button>
         <button className="btn btn-ghost" type="button" onClick={() => recordClip(state, toast)}>Download video keepsake</button>
@@ -114,6 +121,7 @@ export default function Send({ state, lock, setLock, onStartOver }) {
           <Donate />
         </div>
       )}
+      {qrLink && <QrDialog link={qrLink} to={state.card.to} onClose={() => setQrLink(null)} />}
       <button
         className="linkish" type="button" id="btn-new"
         onClick={() => { if (confirm('Start over with an empty bouquet? Your current draft will be cleared.')) onStartOver(); }}

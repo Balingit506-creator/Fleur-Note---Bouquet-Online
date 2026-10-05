@@ -1,11 +1,17 @@
 // Site settings. The site stays fully static either way.
 // Edit this file, then the dev server reloads (or run npm run build for the live site).
 const config = {
-  // Photo storage.
-  //   null      → photos are shrunk and carried inside the share link (up to 3, no account needed).
-  //   Supabase  → photos upload straight from the browser to your free Supabase bucket
-  //               (up to 5, full quality, short links). See README → "Optional photo storage".
-  storage: null,
+  // Short links and photo storage.
+  //   null      → the whole bouquet travels inside the share link; photos are shrunk (up to 3).
+  //   Supabase  → bouquets are saved to your free Supabase project, so links are short
+  //               (…/#s=k3Hq9xTbQw) and photos upload at full quality (up to 5).
+  //               Run supabase/setup.sql once. See README → "Short links with Supabase".
+  storage: {
+    provider: 'supabase',
+    url: 'https://apdffyheypjpjnpxlcap.supabase.co',
+    anonKey: 'sb_publishable_-LblgWhVN85q0SzhP2QfUQ_dJe7PHEi', // publishable key: safe to be public
+    bucket: 'bouquet-photos',
+  },
   // storage: {
   //   provider: 'supabase',
   //   url: 'https://YOUR-PROJECT.supabase.co',

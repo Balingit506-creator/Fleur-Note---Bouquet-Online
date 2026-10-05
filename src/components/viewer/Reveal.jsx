@@ -3,6 +3,7 @@ import { PILE_BOX, paperProps } from '../../lib/constants.js';
 import { useToast } from '../../lib/hooks.js';
 import { recordClip } from '../../lib/render.js';
 import Bouquet from '../Bouquet.jsx';
+import Photo from '../Photo.jsx';
 
 /* After the envelope: the bouquet, its photos, the letter and a few actions. */
 export default function Reveal({ st, onOpenAgain, onSendBack }) {
@@ -161,7 +162,7 @@ function PhotoStack({ st, svgRef, onOpen }) {
               }}
             >
               <i className="pf-deco" aria-hidden="true" />
-              <img src={p.src} alt={p.cap || ''} />
+              <Photo src={p.src} alt={p.cap || ''} />
               {p.cap && <span>{p.cap}</span>}
             </button>
           );
@@ -183,7 +184,7 @@ function Lightbox({ photos, index, setIndex, onClose }) {
       onKeyDown={(e) => { if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); }}
     >
       <form method="dialog"><button className="lightbox-close" aria-label="Close">×</button></form>
-      <img src={p.src} alt={p.cap || ''} />
+      <Photo src={p.src} alt={p.cap || ''} />
       <p>{p.cap || ''}</p>
       {many && <button className="lb-nav lb-prev" type="button" aria-label="Previous photo" onClick={() => go(-1)}>‹</button>}
       {many && <button className="lb-nav lb-next" type="button" aria-label="Next photo" onClick={() => go(1)}>›</button>}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Ambient from '../../lib/ambient.js';
 import { ASSETS, flowerHex } from '../../lib/assets.js';
+import { loadBouquet } from '../../lib/cloud.js';
 import { unpack } from '../../lib/link.js';
 import { byId } from '../../lib/util.js';
 import Envelope from './Envelope.jsx';
@@ -25,16 +26,28 @@ const Flourish = ({ corner, paths, dots }) => (
 /* The recipient's page: a lock screen for password links, then the envelope, then the bouquet. */
 export default function Viewer({ route, onSendBack, onBadLink }) {
   const [viewing, setViewing] = useState(route.st || null);
-  // short links (#z=) are unpacked first
+  const [lock, setLock] = useState(route.sealed != null ? { sealed: route.sealed, hint: route.hint } : null);
+  // compressed links (#z=) are unpacked first; saved ones (#s=) are fetched, then unpacked or locked
   useEffect(() => {
-    if (!route.packed) return undefined;
+    if (!route.packed && !route.stored) return undefined;
     let live = true;
-    unpack(route.packed).then((st) => {
+    const open = async () => {
+      if (route.packed) return unpack(route.packed);
+      const body = await loadBouquet(route.stored);
+      if (body?.startsWith('e:')) {
+        const [sealed, hint = ''] = body.slice(2).split('.');
+        return { lock: { sealed, hint: decodeURIComponent(hint) } };
+      }
+      return body?.startsWith('z:') ? unpack(body.slice(2)) : null;
+    };
+    open().catch(() => null).then((r) => {
       if (!live) return;
-      if (st && st.stems.length) setViewing(st); else onBadLink();
+      if (r?.lock) setLock(r.lock);
+      else if (r && r.stems.length) setViewing(r);
+      else onBadLink();
     });
     return () => { live = false; };
-  }, [route.packed]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [route.packed, route.stored]); // eslint-disable-line react-hooks/exhaustive-deps
   const [revealed, setRevealed] = useState(false);
   const [round, setRound] = useState(0); // "Open again" brings back a fresh, sealed envelope
   const ambient = useRef(null), music = useRef(null);
@@ -63,7 +76,7 @@ export default function Viewer({ route, onSendBack, onBadLink }) {
       <Flourish corner="tr" paths={FLOURISH} dots={[[262, 64, 5], [276, 56, 3.5], [186, 104, 4], [30, 206, 4]]} />
       <Flourish corner="bl" paths={FLOURISH.slice(0, 7)} dots={[[262, 64, 5], [186, 104, 4]]} />
 
-      {!viewing && route.sealed != null && <LockScreen sealed={route.sealed} hint={route.hint} onUnlock={setViewing} />}
+      {!viewing && lock && <LockScreen sealed={lock.sealed} hint={lock.hint} onUnlock={setViewing} />}
       {viewing && !revealed && (
         <Envelope key={round} st={viewing} onOpenStart={() => music.current?.start()} onOpened={() => setRevealed(true)} />
       )}

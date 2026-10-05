@@ -6,6 +6,7 @@ import Music from '../../lib/music.js';
 import { preparePhoto } from '../../lib/photos.js';
 import { fmtTime, mountYT, parseYouTube } from '../../lib/youtube.js';
 import YTFallback from '../YTFallback.jsx';
+import Photo from '../Photo.jsx';
 
 /* ---------- 6. photos & music ---------- */
 export default function Extras({ state, update }) {
@@ -58,7 +59,7 @@ function Photos({ state, update }) {
         {state.photos.map((p, i) => (
           <figure key={i} className="photo pf" data-frame={state.photoFrame}>
             <i className="pf-deco" aria-hidden="true" />
-            <img src={p.src} alt={p.cap || `Photo ${i + 1}`} />
+            <Photo src={p.src} alt={p.cap || `Photo ${i + 1}`} />
             <input
               className="cap" maxLength="60" placeholder="Caption (optional)" aria-label={`Caption for photo ${i + 1}`} value={p.cap}
               onChange={(e) => { const v = e.target.value; update((st) => { st.photos[i].cap = v; }); }}
