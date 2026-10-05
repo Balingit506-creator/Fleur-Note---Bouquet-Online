@@ -9,6 +9,8 @@ export const GATHER = { x: 300, y: 560 };
 export const GREEN_FADE = [320, 372]; // y-range on the stage where foliage outside the wrap fades out
 // Where the photo pile sits beside the bouquet, as a share of the bouquet's box: left, top, width, height.
 export const PILE_BOX = [0.068, 0.815, 0.25, 0.22];
+// each photo in the pile: x %, y % (of its own size) and tilt in degrees
+export const PILE_LAYERS = [[0, 0, -7], [7, -4, 5], [-5, -7, -2], [9, -9, 8], [2, -12, -4]];
 
 export const RIBBONS = [
   { id: 'ivory', name: 'Ivory satin', c: '#efe4cf', l: '#fbf6ec', d: '#c9b896' },

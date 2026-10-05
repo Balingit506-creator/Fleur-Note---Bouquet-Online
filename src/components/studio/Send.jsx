@@ -109,7 +109,7 @@ export default function Send({ state, lock, setLock, onStartOver }) {
         <button className="btn" type="button" disabled={!ready} onClick={copy}>Copy private link</button>
         <button className="btn btn-ghost" type="button" disabled={!ready} onClick={showQr}>Show QR code</button>
         <button className="btn btn-ghost" type="button" disabled={!ready} onClick={preview}>Preview as recipient</button>
-        <button className="btn btn-ghost" type="button" disabled={!ready} onClick={() => exportPNG(state, toast)}>Download bouquet image</button>
+        <button className="btn btn-ghost" type="button" disabled={!ready} onClick={() => exportPNG(state, toast)}>Download as picture</button>
         <button className="btn btn-ghost" type="button" onClick={() => recordClip(state, toast)}>Download video keepsake</button>
       </div>
       {location.protocol === 'file:' && (

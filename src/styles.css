@@ -1116,3 +1116,19 @@ body[data-view="studio"] .view-studio { display: grid; }
 .qr-too-big p { margin: 0 0 8px; font-size: .9rem; }
 
 .photo-loading { background: #efe6da; min-height: 60px; }
+
+/* the music card can shrink to just the record (and a small video for YouTube songs) */
+.mc-toggle {
+  position: absolute; top: -9px; right: -9px; width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer;
+  display: grid; place-items: center; border: 1px solid var(--line); background: var(--panel); color: var(--ink); box-shadow: var(--shadow);
+}
+.mc-toggle svg { width: 16px; height: 16px; }
+.mc-toggle:hover { color: var(--accent); }
+.music-card.mini { width: auto; grid-template-columns: auto; padding: 6px; border-radius: 999px; }
+.music-card.mini .mc-info { display: none; }
+.music-card.mini .mc-disk { width: 52px; height: 52px; }
+.music-card.mini.is-yt { grid-template-columns: auto auto; gap: 8px; padding: 6px 10px 6px 6px; border-radius: 18px; }
+.music-card.mini .mc-yt { grid-column: auto; width: 104px; margin: 0; border-radius: 8px; }
+.music-card.mini.yt-failed .mc-yt { width: 140px; }
+/* room at the end of the page so the buttons can scroll clear of the music card */
+.view-viewer .reveal { padding-bottom: 140px; }

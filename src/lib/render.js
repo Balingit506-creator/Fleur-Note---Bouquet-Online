@@ -1,15 +1,18 @@
-// Drawing a bouquet onto a canvas: the downloadable image and the video keepsake.
+// Drawing a bouquet onto a canvas: the downloadable picture and the video keepsake
+// (both show the bouquet, its photos and the letter).
 import { ASSETS, flowerHex } from './assets.js';
 import { layoutAddons, layoutGreenery, layoutStems, ribbonMarkup, stemPath } from './bouquet.js';
-import { GATHER, GREEN_FADE, paperOf } from './constants.js';
+import { photoSrc } from './cloud.js';
+import { GATHER, GREEN_FADE, PILE_BOX, PILE_LAYERS, paperOf } from './constants.js';
 import { byId, downloadBlob, fileSafe, mulberry32 } from './util.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 const canvas = (w, h) => Object.assign(document.createElement('canvas'), { width: Math.round(w), height: Math.round(h) });
 
-export const loadImage = (src) => new Promise((res, rej) => {
+export const loadImage = (src, cors = false) => new Promise((res, rej) => {
   const im = new Image();
+  if (cors) im.crossOrigin = 'anonymous';
   im.onload = () => res(im);
   im.onerror = rej;
   im.src = src;
@@ -57,62 +60,7 @@ function greeneryLayer(sprigs, wrap, imgs, scale) {
   return gl;
 }
 
-/* ---------- still image ---------- */
-export async function exportPNG(st, toast) {
-  if (!st.stems.length) return toast('Add a few stems first.');
-  toast('Preparing your image…');
-  try {
-    const S = 2;
-    const c = canvas(600 * S, 760 * S);
-    const ctx = c.getContext('2d');
-    ctx.scale(S, S);
-    const bg = ctx.createRadialGradient(300, 330, 40, 300, 380, 520);
-    bg.addColorStop(0, '#fffdfa');
-    bg.addColorStop(1, '#efe5d8');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, 600, 760);
 
-    const { wrap, blooms, sprigs, addons, imgs, ribbonImg } = await prepare(st);
-    const drawAddons = (which) => addons.filter((a) => a.layer === which).forEach((a) => ctx.drawImage(imgs.get(a.a.src), a.x, a.y, a.w, a.h));
-    const drawFront = () => { if (wrap?.front) ctx.drawImage(imgs.get(wrap.front), 0, 0, 600, 760); };
-
-    if (wrap?.back) ctx.drawImage(imgs.get(wrap.back), 0, 0, 600, 760);
-    drawAddons('back');
-    ctx.drawImage(greeneryLayer(sprigs, wrap, imgs, S), 0, 0, 600, 760);
-    ctx.strokeStyle = '#5f7a4a';
-    ctx.lineWidth = 4;
-    ctx.lineCap = 'round';
-    blooms.forEach((b) => ctx.stroke(new Path2D(stemPath(b.x, b.y))));
-    if (!wrap?.frontOnTop) drawFront();
-    blooms.forEach((b) => {
-      ctx.save();
-      ctx.shadowColor = 'rgba(60,30,20,.28)';
-      ctx.shadowBlur = 12;
-      ctx.shadowOffsetY = 6;
-      ctx.translate(b.x, b.y);
-      ctx.rotate((b.rot * Math.PI) / 180);
-      ctx.drawImage(imgs.get(b.f.src), -b.size / 2, -b.size / 2, b.size, b.size);
-      ctx.restore();
-    });
-    if (wrap?.frontOnTop) drawFront();
-    if (ribbonImg) ctx.drawImage(ribbonImg, 0, 0, 600, 760);
-    drawAddons('top');
-
-    const blob = await new Promise((res, rej) => {
-      try { c.toBlob((b) => (b ? res(b) : rej(new Error('empty'))), 'image/png'); } catch (err) { rej(err); }
-    });
-    downloadBlob(blob, `bouquet${fileSafe(st.card.to)}.png`);
-    toast('Bouquet image saved.');
-  } catch (err) {
-    console.warn(err);
-    toast(location.protocol === 'file:'
-      ? 'Browsers block image export from local files. Run npm run dev and try again.'
-      : 'Sorry, the image could not be created.');
-  }
-}
-
-/* ---------- video keepsake: replays the bloom on a canvas and records it ---------- */
-// MP4 where the browser can record it (Chrome, Edge, Safari), otherwise WebM.
 const CLIP = { W: 1080, H: 1350, FPS: 30, DUR: 8.5, LETTER: 4.4 };
 const clip01 = (v) => Math.max(0, Math.min(1, v));
 const easeOut = (t) => 1 - Math.pow(1 - t, 3);
@@ -181,59 +129,165 @@ function drawPaperPattern(ctx, p, w, h) {
   ctx.restore();
 }
 
-export async function recordClip(st, toast) {
-  if (!st?.stems.length) return toast('Add a few stems first.');
-  if (clipBusy) return toast('Your video is still being made…');
-  const types = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
-  const candidates = window.MediaRecorder ? types.filter((t) => MediaRecorder.isTypeSupported(t)) : [];
-  if (!candidates.length || !HTMLCanvasElement.prototype.captureStream) return toast('This browser can’t record video. Try Chrome, Edge or Safari.');
-  clipBusy = true;
-  const cv = canvas(CLIP.W, CLIP.H);
-  cv.style.cssText = 'position:fixed;left:-99999px;top:0';
-  cv.setAttribute('aria-hidden', 'true');
-  document.body.append(cv);
-  try {
-    toast('Preparing your video…');
-    const { W, H } = CLIP;
-    const ctx = cv.getContext('2d');
-    const { wrap, blooms, sprigs, addons, imgs, ribbonImg } = await prepare(st, 1200);
-    await Promise.all(['48px "Pinyon Script"', 'italic 40px "Cormorant Garamond"', '40px "Caveat"', '20px "Jost"'].map((f) => document.fonts.load(f).catch(() => {})));
 
-    // letter card, laid out once
-    const { to, msg, from, font } = st.card;
-    const paper = paperOf(st.card.paper);
-    const cardW = 820, padX = 56;
-    ctx.font = canvasFont(font, font === 'hand' ? 44 : font === 'serif' ? 38 : 42);
-    const msgLines = wrapLines(ctx, msg || 'Just because.', cardW - padX * 2, 4);
-    const lineH = font === 'serif' ? 50 : 56;
-    const cardH = 64 + 64 + msgLines.length * lineH + (from ? 70 : 20) + 30;
-    // bouquet placement: top of the frame, scaled down if a long letter needs the room,
-    // so the card sits just below the bow and never covers the bouquet
-    const BY = 18, K = Math.min(1.16, (H - cardH - 50 - BY) / 752), BX = (W - 600 * K) / 2;
-    const cardY = Math.min(BY + 752 * K, H - cardH - 50);
-    const greens = sprigs.length ? greeneryLayer(sprigs, wrap, imgs, K) : null;
-    const stemLayer = canvas(600 * K, 760 * K);
-    const sx = stemLayer.getContext('2d');
-    sx.scale(K, K);
-    sx.strokeStyle = '#5f7a4a';
-    sx.lineWidth = 4;
-    sx.lineCap = 'round';
-    blooms.forEach((b) => sx.stroke(new Path2D(stemPath(b.x, b.y))));
-    const tRibbon = 0.95 + blooms.length * 0.08;
+/* ---------- photos, drawn in their frames like the pile on screen ---------- */
+// pad: top, sides, bottom, as fractions of the width (like the CSS padding)
+const FRAME_LOOK = {
+  polaroid: { bg: '#fffdf8', pad: [0.06, 0.06, 0.09] },
+  washi: { bg: '#ffffff', pad: [0.05, 0.05, 0.05] },
+  gold: { bg: null, pad: [0.07, 0.07, 0.07] },
+  vintage: { bg: '#f2e6cc', pad: [0.07, 0.07, 0.09] },
+  film: { bg: '#161214', pad: [0.15, 0.04, 0.06] },
+};
+const frameSize = (frame, w, cap) => {
+  const [pt, px, pb] = (FRAME_LOOK[frame] || FRAME_LOOK.polaroid).pad.map((v) => v * w);
+  return { pt, px, pb, inner: w - 2 * px, capH: cap ? w * 0.14 : 0, h: pt + (w - 2 * px) + pb + (cap ? w * 0.14 : 0) };
+};
 
-    // falling petals in the bouquet's colours (deterministic, so every frame is consistent)
-    const palette = [...new Set(blooms.map((b) => flowerHex(b.f)))].concat('#f6e3dc');
-    const rnd = mulberry32(st.seed ^ 0x2468ace);
-    const petals = Array.from({ length: 34 }, () => ({
-      x: rnd() * W, y: -rnd() * H, vy: 70 + rnd() * 90, sway: 14 + rnd() * 30, sp: 0.6 + rnd(), ph: rnd() * 6.3,
-      s: 9 + rnd() * 11, r0: rnd() * 6.3, vr: (rnd() - 0.5) * 1.6, c: palette[Math.floor(rnd() * palette.length)], a: 0.45 + rnd() * 0.4,
-    }));
+// One framed photo, centred on the current origin, w wide.
+function drawPhotoCard(ctx, { im, cap }, frame, w) {
+  const look = FRAME_LOOK[frame] || FRAME_LOOK.polaroid;
+  const { pt, px, inner, capH, h } = frameSize(frame, w, cap);
+  ctx.save();
+  ctx.translate(-w / 2, -h / 2);
+  ctx.shadowColor = 'rgba(50,30,20,.42)';
+  ctx.shadowBlur = w * 0.11;
+  ctx.shadowOffsetY = w * 0.05;
+  if (look.bg) ctx.fillStyle = look.bg;
+  else {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    [[0, '#f8e7ad'], [0.28, '#c8973f'], [0.52, '#f6dc8f'], [0.76, '#a87a2c'], [1, '#f1d58a']].forEach(([o, c]) => g.addColorStop(o, c));
+    ctx.fillStyle = g;
+  }
+  ctx.fillRect(0, 0, w, h);
+  ctx.shadowColor = 'transparent';
+  // the photo, cropped square from its centre
+  const s = Math.min(im.width, im.height);
+  if (frame === 'vintage') ctx.filter = 'sepia(.35) contrast(.96) saturate(.9)';
+  ctx.drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, px, pt, inner, inner);
+  ctx.filter = 'none';
+  if (frame === 'gold') {
+    ctx.strokeStyle = 'rgba(120,80,20,.35)'; ctx.lineWidth = w * 0.03; ctx.strokeRect(px, pt, inner, inner);
+    ctx.strokeStyle = '#fff3cf'; ctx.lineWidth = 2; ctx.strokeRect(px + 1, pt + 1, inner - 2, inner - 2);
+  }
+  if (frame === 'vintage') {
+    // photo corners
+    const c = inner * 0.16, x0 = w * 0.05, y0 = w * 0.05, side = w * 0.9;
+    ctx.fillStyle = '#2c2420';
+    [[x0, y0, 1, 1], [x0 + side, y0, -1, 1], [x0, y0 + side, 1, -1], [x0 + side, y0 + side, -1, -1]].forEach(([x, y, dx, dy]) => {
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + c * dx, y); ctx.lineTo(x, y + c * dy); ctx.fill();
+    });
+  }
+  if (frame === 'film') {
+    // sprocket holes along the top and bottom edges
+    ctx.fillStyle = '#efe7da';
+    const hw = w * 0.94 * 0.07, hh = h * 0.05;
+    for (let x = w * 0.03; x < w * 0.97 - hw / 2; x += w * 0.94 * 0.14) {
+      ctx.fillRect(x, h * 0.04, hw, hh);
+      ctx.fillRect(x, h * 0.96 - hh, hw, hh);
+    }
+  }
+  if (frame === 'washi') {
+    // a strip of striped tape across the top
+    ctx.save();
+    ctx.translate(w / 2, h * -0.005);
+    ctx.rotate((-4 * Math.PI) / 180);
+    const tw = w * 0.46, th = h * 0.13;
+    ctx.beginPath(); ctx.rect(-tw / 2, -th / 2, tw, th); ctx.clip();
+    for (let i = -tw - th; i < tw + th; i += 12) {
+      ctx.fillStyle = (Math.round(i / 12) & 1) ? 'rgba(250,205,212,.85)' : 'rgba(235,150,165,.85)';
+      ctx.beginPath(); ctx.moveTo(i, -th / 2); ctx.lineTo(i + 12, -th / 2); ctx.lineTo(i + 12 + th, th / 2); ctx.lineTo(i + th, th / 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  if (cap) {
+    ctx.fillStyle = frame === 'film' ? '#efe7da' : '#3f3531';
+    ctx.font = `${Math.round(w * 0.11)}px "Caveat", cursive`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let text = cap;
+    while (text.length > 1 && ctx.measureText(text).width > inner) text = text.slice(0, -2) + '…';
+    ctx.fillText(text, w / 2, pt + inner + capH * 0.55);
+  }
+  ctx.restore();
+}
 
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#f8f2eb');
-    bg.addColorStop(1, '#efe5d8');
+// The photos beside the foot of the bouquet (bouquet units, 600 × 760), spread out like the pile
+// when it's hovered on the page, so every photo shows. show(i) → 0…1 for animating in.
+function drawPile(ctx, photos, frame, show = () => 1) {
+  const [l, t, bw, bh] = PILE_BOX;
+  const W = bw * 600, cx = l * 600 + W / 2, cy = t * 760 + (bh * 760) / 2;
+  photos.forEach((p, i) => {
+    const k = show(i);
+    if (k <= 0) return;
+    const [, , r] = PILE_LAYERS[i % PILE_LAYERS.length];
+    const c = i - (photos.length - 1) / 2;
+    const { h } = frameSize(frame, W, p.cap);
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, k * 1.4);
+    ctx.translate(cx + c * 0.62 * W, cy + (-0.08 + Math.abs(c) * 0.06) * h + (1 - easeOut(k)) * 40);
+    ctx.rotate(((c * 7 + r * 0.3) * Math.PI) / 180);
+    drawPhotoCard(ctx, p, frame, W);
+    ctx.restore();
+  });
+}
 
-    const drawPetal = (p, t) => {
+async function loadPhotos(st) {
+  const all = await Promise.all(st.photos.map(async (p) => {
+    try {
+      const src = await photoSrc(p.src);
+      return { im: await loadImage(src, /^https?:/.test(src)), cap: p.cap };
+    } catch (err) {
+      console.warn('A photo could not be loaded for the keepsake.', err);
+      return null;
+    }
+  }));
+  return all.filter(Boolean);
+}
+
+/* ---------- the keepsake scene: bouquet, photos and letter, shared by the image and the video ---------- */
+async function keepsake(st) {
+  const { W, H } = CLIP;
+  const { wrap, blooms, sprigs, addons, imgs, ribbonImg } = await prepare(st, 1200);
+  const photos = await loadPhotos(st);
+  await Promise.all(['48px "Pinyon Script"', 'italic 40px "Cormorant Garamond"', '40px "Caveat"', '20px "Jost"'].map((f) => document.fonts.load(f).catch(() => {})));
+
+  // letter card, laid out once
+  const { to, msg, from, font } = st.card;
+  const paper = paperOf(st.card.paper);
+  const cardW = 820, padX = 56;
+  const measure = canvas(10, 10).getContext('2d');
+  measure.font = canvasFont(font, font === 'hand' ? 44 : font === 'serif' ? 38 : 42);
+  const msgLines = wrapLines(measure, msg || 'Just because.', cardW - padX * 2, 4);
+  const lineH = font === 'serif' ? 50 : 56;
+  const cardH = 64 + 64 + msgLines.length * lineH + (from ? 70 : 20) + 30;
+  // bouquet placement: top of the frame, scaled down if a long letter needs the room,
+  // so the card sits just below the bow (and the photos) and never covers the bouquet
+  const bottom = photos.length ? 805 : 752; // photos hang a little below the bouquet
+  const BY = 18, K = Math.min(1.16, (H - cardH - 50 - BY) / bottom), BX = (W - 600 * K) / 2;
+  const cardY = Math.min(BY + bottom * K, H - cardH - 50);
+  const greens = sprigs.length ? greeneryLayer(sprigs, wrap, imgs, K) : null;
+  const stemLayer = canvas(600 * K, 760 * K);
+  const sx = stemLayer.getContext('2d');
+  sx.scale(K, K);
+  sx.strokeStyle = '#5f7a4a';
+  sx.lineWidth = 4;
+  sx.lineCap = 'round';
+  blooms.forEach((b) => sx.stroke(new Path2D(stemPath(b.x, b.y))));
+  const tRibbon = 0.95 + blooms.length * 0.08;
+  const tPhotos = tRibbon + 0.45;
+
+  // falling petals in the bouquet's colours (deterministic, so every frame is consistent)
+  const palette = [...new Set(blooms.map((b) => flowerHex(b.f)))].concat('#f6e3dc');
+  const rnd = mulberry32(st.seed ^ 0x2468ace);
+  const petals = Array.from({ length: 34 }, () => ({
+    x: rnd() * W, y: -rnd() * H, vy: 70 + rnd() * 90, sway: 14 + rnd() * 30, sp: 0.6 + rnd(), ph: rnd() * 6.3,
+    s: 9 + rnd() * 11, r0: rnd() * 6.3, vr: (rnd() - 0.5) * 1.6, c: palette[Math.floor(rnd() * palette.length)], a: 0.45 + rnd() * 0.4,
+  }));
+
+  // draws the scene at time t (seconds) onto ctx; scale draws it larger, still leaves out the petals in front
+  return (ctx, t, { scale = 1, still = false } = {}) => {
+    const drawPetal = (p) => {
       const y = ((p.y + p.vy * t) % (H + 80) + H + 80) % (H + 80) - 40;
       const x = p.x + Math.sin(t * p.sp + p.ph) * p.sway;
       ctx.save();
@@ -251,128 +305,172 @@ export async function recordClip(st, toast) {
       ctx.restore();
     };
 
-    const drawFrame = (t) => {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, W, H);
-      // warm glow behind the bouquet
-      const glow = ctx.createRadialGradient(W / 2, BY + 330 * K, 40, W / 2, BY + 330 * K, 560);
-      glow.addColorStop(0, `rgba(255,255,255,${0.9 * easeOut(clip01(t / 1.2))})`);
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, W, H);
-      petals.slice(0, 14).forEach((p) => drawPetal(p, t)); // a few behind the bouquet
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.globalAlpha = 1;
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#f8f2eb');
+    bg.addColorStop(1, '#efe5d8');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+    // warm glow behind the bouquet
+    const glow = ctx.createRadialGradient(W / 2, BY + 330 * K, 40, W / 2, BY + 330 * K, 560);
+    glow.addColorStop(0, `rgba(255,255,255,${0.9 * easeOut(clip01(t / 1.2))})`);
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, W, H);
+    petals.slice(0, 14).forEach(drawPetal); // a few behind the bouquet
 
+    ctx.save();
+    ctx.translate(BX, BY);
+    ctx.scale(K, K);
+    const aw = easeOut(clip01(t / 0.8));
+    // ground shadow
+    ctx.globalAlpha = 0.18 * aw;
+    ctx.fillStyle = '#5a3a28';
+    ctx.beginPath();
+    ctx.ellipse(300, 748, 170, 14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = aw;
+    if (wrap?.back) ctx.drawImage(imgs.get(wrap.back), 0, (1 - aw) * 16, 600, 760);
+    const drawAddons = (layer) => addons.filter((a) => a.layer === layer).forEach((a) => {
+      const p = clip01((t - (tRibbon + 0.25 + a.k * 0.18)) / 0.6);
+      if (!p) return;
+      const s = 0.85 + 0.15 * easeBack(p);
       ctx.save();
-      ctx.translate(BX, BY);
-      ctx.scale(K, K);
-      const aw = easeOut(clip01(t / 0.8));
-      // ground shadow
-      ctx.globalAlpha = 0.18 * aw;
-      ctx.fillStyle = '#5a3a28';
-      ctx.beginPath();
-      ctx.ellipse(300, 748, 170, 14, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = aw;
-      if (wrap?.back) ctx.drawImage(imgs.get(wrap.back), 0, (1 - aw) * 16, 600, 760);
-      const drawAddons = (layer) => addons.filter((a) => a.layer === layer).forEach((a) => {
-        const p = clip01((t - (tRibbon + 0.25 + a.k * 0.18)) / 0.6);
-        if (!p) return;
-        const s = 0.85 + 0.15 * easeBack(p);
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, p * 1.5);
-        ctx.translate(a.x + a.w / 2, a.y + a.h);
-        ctx.scale(s, s);
-        ctx.drawImage(imgs.get(a.a.src), -a.w / 2, -a.h + (1 - p) * 18, a.w, a.h);
-        ctx.restore();
-      });
-      drawAddons('back');
-      if (greens) {
-        const g = easeOut(clip01((t - 0.25) / 1.2));
-        ctx.save();
-        ctx.globalAlpha = g;
-        ctx.translate(300, GATHER.y);
-        ctx.scale(1, 0.55 + 0.45 * g);
-        ctx.translate(-300, -GATHER.y);
-        ctx.drawImage(greens, 0, 0, 600, 760);
-        ctx.restore();
-      }
-      ctx.globalAlpha = clip01((t - 0.5) / 0.6);
-      ctx.drawImage(stemLayer, 0, 0, 600, 760);
-      ctx.globalAlpha = aw;
-      if (wrap?.front && !wrap.frontOnTop) ctx.drawImage(imgs.get(wrap.front), 0, (1 - aw) * 16, 600, 760);
-      blooms.forEach((b, k) => {
-        const p = clip01((t - (0.7 + k * 0.08)) / 0.75);
-        if (!p) return;
-        const s = 0.2 + 0.8 * easeBack(p);
-        ctx.save();
-        ctx.globalAlpha = Math.min(1, p * 1.6);
-        ctx.shadowColor = 'rgba(60,30,20,.28)';
-        ctx.shadowBlur = 12;
-        ctx.shadowOffsetY = 6;
-        ctx.translate(b.x, b.y);
-        ctx.rotate(((b.rot - (1 - p) * 25) * Math.PI) / 180);
-        ctx.scale(s, s);
-        ctx.drawImage(imgs.get(b.f.src), -b.size / 2, -b.size / 2, b.size, b.size);
-        ctx.restore();
-      });
-      ctx.globalAlpha = aw;
-      if (wrap?.front && wrap.frontOnTop) ctx.drawImage(imgs.get(wrap.front), 0, (1 - aw) * 16, 600, 760);
-      if (ribbonImg) {
-        ctx.globalAlpha = clip01((t - tRibbon) / 0.6);
-        ctx.drawImage(ribbonImg, 0, 0, 600, 760);
-      }
-      ctx.globalAlpha = 1;
-      drawAddons('top');
+      ctx.globalAlpha = Math.min(1, p * 1.5);
+      ctx.translate(a.x + a.w / 2, a.y + a.h);
+      ctx.scale(s, s);
+      ctx.drawImage(imgs.get(a.a.src), -a.w / 2, -a.h + (1 - p) * 18, a.w, a.h);
       ctx.restore();
+    });
+    drawAddons('back');
+    if (greens) {
+      const g = easeOut(clip01((t - 0.25) / 1.2));
+      ctx.save();
+      ctx.globalAlpha = g;
+      ctx.translate(300, GATHER.y);
+      ctx.scale(1, 0.55 + 0.45 * g);
+      ctx.translate(-300, -GATHER.y);
+      ctx.drawImage(greens, 0, 0, 600, 760);
+      ctx.restore();
+    }
+    ctx.globalAlpha = clip01((t - 0.5) / 0.6);
+    ctx.drawImage(stemLayer, 0, 0, 600, 760);
+    ctx.globalAlpha = aw;
+    if (wrap?.front && !wrap.frontOnTop) ctx.drawImage(imgs.get(wrap.front), 0, (1 - aw) * 16, 600, 760);
+    blooms.forEach((b, k) => {
+      const p = clip01((t - (0.7 + k * 0.08)) / 0.75);
+      if (!p) return;
+      const s = 0.2 + 0.8 * easeBack(p);
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, p * 1.6);
+      ctx.shadowColor = 'rgba(60,30,20,.28)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 6;
+      ctx.translate(b.x, b.y);
+      ctx.rotate(((b.rot - (1 - p) * 25) * Math.PI) / 180);
+      ctx.scale(s, s);
+      ctx.drawImage(imgs.get(b.f.src), -b.size / 2, -b.size / 2, b.size, b.size);
+      ctx.restore();
+    });
+    ctx.globalAlpha = aw;
+    if (wrap?.front && wrap.frontOnTop) ctx.drawImage(imgs.get(wrap.front), 0, (1 - aw) * 16, 600, 760);
+    if (ribbonImg) {
+      ctx.globalAlpha = clip01((t - tRibbon) / 0.6);
+      ctx.drawImage(ribbonImg, 0, 0, 600, 760);
+    }
+    ctx.globalAlpha = 1;
+    drawAddons('top');
+    drawPile(ctx, photos, st.photoFrame, (i) => clip01((t - (tPhotos + i * 0.15)) / 0.7));
+    ctx.restore();
 
-      // the letter slides up
-      const lp = easeOut(clip01((t - CLIP.LETTER) / 0.9));
-      if (lp > 0) {
-        ctx.save();
-        ctx.globalAlpha = lp;
-        ctx.translate(W / 2, cardY + cardH / 2 + (1 - lp) * 70);
-        ctx.rotate((-1.2 * Math.PI) / 180);
-        ctx.translate(-cardW / 2, -cardH / 2);
-        ctx.shadowColor = 'rgba(60,35,25,.28)';
-        ctx.shadowBlur = 40;
-        ctx.shadowOffsetY = 18;
-        ctx.fillStyle = paper.bg;
-        ctx.fillRect(0, 0, cardW, cardH);
-        ctx.shadowColor = 'transparent';
-        drawPaperPattern(ctx, paper, cardW, cardH);
-        ctx.fillStyle = paper.tape;
-        ctx.save();
-        ctx.translate(cardW / 2, 0);
-        ctx.rotate((-3 * Math.PI) / 180);
-        ctx.fillRect(-60, -16, 120, 32);
-        ctx.restore();
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillStyle = paper.accent;
-        ctx.font = canvasFont('script', 58);
-        ctx.fillText(to ? `Dear ${to},` : 'For you,', padX, 104);
-        ctx.fillStyle = paper.ink;
-        ctx.font = canvasFont(font, font === 'hand' ? 44 : font === 'serif' ? 38 : 42);
-        msgLines.forEach((line, i) => ctx.fillText(line, padX, 104 + 64 + i * lineH));
-        if (from) {
-          ctx.fillStyle = paper.soft;
-          ctx.font = canvasFont('script', 50);
-          ctx.textAlign = 'right';
-          ctx.fillText(`— ${from}`, cardW - padX, 104 + 64 + msgLines.length * lineH + 34);
-          ctx.textAlign = 'left';
-        }
-        ctx.restore();
+    // the letter slides up
+    const lp = easeOut(clip01((t - CLIP.LETTER) / 0.9));
+    if (lp > 0) {
+      ctx.save();
+      ctx.globalAlpha = lp;
+      ctx.translate(W / 2, cardY + cardH / 2 + (1 - lp) * 70);
+      ctx.rotate((-1.2 * Math.PI) / 180);
+      ctx.translate(-cardW / 2, -cardH / 2);
+      ctx.shadowColor = 'rgba(60,35,25,.28)';
+      ctx.shadowBlur = 40;
+      ctx.shadowOffsetY = 18;
+      ctx.fillStyle = paper.bg;
+      ctx.fillRect(0, 0, cardW, cardH);
+      ctx.shadowColor = 'transparent';
+      drawPaperPattern(ctx, paper, cardW, cardH);
+      ctx.fillStyle = paper.tape;
+      ctx.save();
+      ctx.translate(cardW / 2, 0);
+      ctx.rotate((-3 * Math.PI) / 180);
+      ctx.fillRect(-60, -16, 120, 32);
+      ctx.restore();
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = paper.accent;
+      ctx.font = canvasFont('script', 58);
+      ctx.fillText(to ? `Dear ${to},` : 'For you,', padX, 104);
+      ctx.fillStyle = paper.ink;
+      ctx.font = canvasFont(font, font === 'hand' ? 44 : font === 'serif' ? 38 : 42);
+      msgLines.forEach((line, i) => ctx.fillText(line, padX, 104 + 64 + i * lineH));
+      if (from) {
+        ctx.fillStyle = paper.soft;
+        ctx.font = canvasFont('script', 50);
+        ctx.textAlign = 'right';
+        ctx.fillText(`— ${from}`, cardW - padX, 104 + 64 + msgLines.length * lineH + 34);
+        ctx.textAlign = 'left';
       }
-      petals.slice(14).forEach((p) => drawPetal(p, t)); // the rest drift in front
-      ctx.globalAlpha = 0.55;
-      ctx.fillStyle = '#857970';
-      ctx.font = '22px "Jost", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('made with Fleur & Note', W / 2, H - 22);
-      ctx.textAlign = 'left';
-      ctx.globalAlpha = 1;
-    };
+      ctx.restore();
+    }
+    if (!still) petals.slice(14).forEach(drawPetal); // the rest drift in front
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#857970';
+    ctx.font = '22px "Jost", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('made with Fleur & Note', W / 2, H - 22);
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  };
+}
+
+/* ---------- still image: the finished keepsake ---------- */
+export async function exportPNG(st, toast) {
+  if (!st?.stems.length) return toast('Add a few stems first.');
+  toast('Preparing your picture…');
+  try {
+    const S = 2; // 2160 × 2700
+    const c = canvas(CLIP.W * S, CLIP.H * S);
+    const draw = await keepsake(st);
+    draw(c.getContext('2d'), CLIP.DUR, { scale: S, still: true });
+    const blob = await new Promise((res, rej) => {
+      try { c.toBlob((b) => (b ? res(b) : rej(new Error('empty'))), 'image/png'); } catch (err) { rej(err); }
+    });
+    downloadBlob(blob, `bouquet${fileSafe(st.card.to)}.png`);
+    toast('Picture saved.');
+  } catch (err) {
+    console.warn(err);
+    toast(location.protocol === 'file:'
+      ? 'Browsers block image export from local files. Run npm run dev and try again.'
+      : 'Sorry, the picture could not be created.');
+  }
+}
+
+/* ---------- video keepsake: replays the bloom on a canvas and records it ---------- */
+export async function recordClip(st, toast) {
+  if (!st?.stems.length) return toast('Add a few stems first.');
+  if (clipBusy) return toast('Your video is still being made…');
+  const types = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+  const candidates = window.MediaRecorder ? types.filter((t) => MediaRecorder.isTypeSupported(t)) : [];
+  if (!candidates.length || !HTMLCanvasElement.prototype.captureStream) return toast('This browser can’t record video. Try Chrome, Edge or Safari.');
+  clipBusy = true;
+  const cv = canvas(CLIP.W, CLIP.H);
+  cv.style.cssText = 'position:fixed;left:-99999px;top:0';
+  cv.setAttribute('aria-hidden', 'true');
+  document.body.append(cv);
+  try {
+    toast('Preparing your video…');
+    const ctx = cv.getContext('2d');
+    const draw = await keepsake(st);
+    const drawFrame = (t) => draw(ctx, t);
 
     drawFrame(0);
     try { ctx.getImageData(0, 0, 1, 1); } catch {
@@ -415,7 +513,7 @@ export async function recordClip(st, toast) {
     });
 
     const ext = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
-    downloadBlob(blob, `bouquet${fileSafe(to)}.${ext}`, 10000);
+    downloadBlob(blob, `bouquet${fileSafe(st.card.to)}.${ext}`, 10000);
     toast(`Video saved (${ext.toUpperCase()}).`);
   } catch (err) {
     console.warn(err);

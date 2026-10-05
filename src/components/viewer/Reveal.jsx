@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { PILE_BOX, paperProps } from '../../lib/constants.js';
+import { PILE_BOX, PILE_LAYERS as PILE, paperProps } from '../../lib/constants.js';
 import { useToast } from '../../lib/hooks.js';
-import { recordClip } from '../../lib/render.js';
+import { exportPNG, recordClip } from '../../lib/render.js';
 import Bouquet from '../Bouquet.jsx';
 import Photo from '../Photo.jsx';
 
@@ -26,6 +26,7 @@ export default function Reveal({ st, onOpenAgain, onSendBack }) {
       <Letter st={st} onClick={() => setReading(true)} />
       <div className="reveal-actions">
         <button className="chip" type="button" id="btn-replay" onClick={onOpenAgain}>Open again</button>
+        <button className="chip" type="button" id="btn-save-picture" onClick={() => exportPNG(st, toast)}>Save as picture</button>
         <button className="chip" type="button" id="btn-save-video" onClick={() => recordClip(st, toast)}>Save as video</button>
         <a className="btn btn-small" href="#studio" onClick={onSendBack}>Send one back</a>
       </div>
@@ -113,7 +114,6 @@ function Reader({ st, onClose }) {
 
 /* ---------- photos: a small pile beside the bouquet ---------- */
 // Hover (or a first tap on touch screens) fans them out; clicking one opens it large.
-const PILE = [[0, 0, -7], [7, -4, 5], [-5, -7, -2], [9, -9, 8], [2, -12, -4]]; // x%, y%, tilt for each layer
 
 function PhotoStack({ st, svgRef, onOpen }) {
   const n = st.photos.length;

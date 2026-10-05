@@ -17,6 +17,8 @@ export default function MusicCard({ st, ref }) {
   const [title, setTitle] = useState(st.yt?.title || '');
   const [started, setStarted] = useState(false);
   const wantPlay = useRef(false);
+  // small screens start with just the record, so the card never covers the letter or buttons
+  const [mini, setMini] = useState(() => matchMedia('(max-width: 900px)').matches);
 
   // the YouTube player is prepared as soon as the page opens, so it can start the moment the seal breaks
   useEffect(() => {
@@ -75,7 +77,7 @@ export default function MusicCard({ st, ref }) {
   };
 
   return (
-    <div className={`music-card${show ? ' show' : ''}${playing ? ' playing' : ''}${yt ? ' is-yt' : ''}${failed ? ' yt-failed' : ''}`} aria-live="polite">
+    <div className={`music-card${mini ? ' mini' : ''}${show ? ' show' : ''}${playing ? ' playing' : ''}${yt ? ' is-yt' : ''}${failed ? ' yt-failed' : ''}`} aria-live="polite">
       <button className="mc-disk" type="button" onClick={tap} aria-label={yt && failed ? `Listen to ${name} on YouTube` : `${playing ? 'Pause' : 'Play'} ${name}`}>
         <span className="vinyl" aria-hidden="true"><span className="vinyl-label" /></span>
         <span className="tonearm" aria-hidden="true" />
@@ -84,6 +86,9 @@ export default function MusicCard({ st, ref }) {
         <small>{yt && failed ? 'A song for you' : playing ? 'Now playing' : 'Paused · tap the record'}</small>
         <b>{name}</b>
       </div>
+      <button className="mc-toggle" type="button" onClick={() => setMini((m) => !m)} aria-label={mini ? 'Show the music player' : 'Make the music player smaller'} aria-expanded={!mini}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{mini ? <path d="M8 14l4-4 4 4" /> : <path d="M8 10l4 4 4-4" />}</svg>
+      </button>
       <div className="mc-yt">{failed ? <YTFallback yt={st.yt} failure={failed} onRetry={retry} /> : <div ref={host} />}</div>
     </div>
   );
