@@ -95,8 +95,8 @@ const config = {
 
     // E-wallets shown with your QR code and number (put QR images in the Donate/ folder)
     wallets: [
-      // { name: 'GCash', accountName: 'Juan D.', number: '0917 123 4567', qr: 'Donate/gcash-qr.png' },
-      // { name: 'Maya',  accountName: 'Juan D.', number: '0917 123 4567', qr: 'Donate/maya-qr.png' },
+      { name: 'GCash', qr: 'Donate/gcash-qr.png' },
+      { name: 'Maya', qr: 'Donate/maya-qr.png' },
     ],
 
     // Bank transfer details

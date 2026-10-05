@@ -64,11 +64,18 @@ function DonateDialog({ dialogRef, amount, detail, setDetail }) {
     body = (
       <>
         <button className="linkish dd-back" type="button" onClick={() => setDetail(null)}>‹ All ways to give</button>
-        <header className="dd-head"><p className="eyebrow">{detail.name}</p><h2>{amtText ? `Send ${amtText}` : 'Send any amount'}</h2></header>
+        {/* e-wallets like GCash and Maya send in their own currency, so no dollar amount there */}
+        <header className="dd-head"><p className="eyebrow">{detail.name}</p><h2>{amtText && !detail.wallet ? `Send ${amtText}` : 'Send any amount'}</h2></header>
         <div className="dd-details">
           {detail.wallet ? (
             <>
               {d.qr && <img className="dd-qr" src={d.qr} alt={`${d.name} QR code`} />}
+              {d.qr && (
+                <a className="chip dd-save" href={d.qr} download={`fleur-and-note-${d.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-qr${d.qr.match(/\.\w+$/)?.[0] || '.png'}`}>
+                  Save QR image
+                </a>
+              )}
+              {d.qr && <p className="hint dd-qr-hint">On your phone? Save the image, then in {d.name} choose to scan and upload it from your photos.</p>}
               <Row label="Account name" value={d.accountName} />
               <Row label={`${d.name} number`} value={d.number} />
             </>
@@ -81,7 +88,7 @@ function DonateDialog({ dialogRef, amount, detail, setDetail }) {
             </>
           )}
         </div>
-        <p className="hint">Thank you! Every gift keeps the flowers free.</p>
+        <p className="hint dd-thanks">Thank you! Every gift keeps the flowers free.</p>
       </>
     );
   } else {

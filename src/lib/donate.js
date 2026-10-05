@@ -41,7 +41,7 @@ export function donateMethods(amount) {
   if (STRIPE) list.push({ name: 'Credit or debit card', sub: 'Secure card checkout by Stripe', icon: 'card', url: STRIPE });
   if (KOFI) list.push({ name: 'Ko-fi', sub: `ko-fi.com/${KOFI}`, icon: 'cup', url: `https://ko-fi.com/${KOFI}` });
   if (BMAC) list.push({ name: 'Buy Me a Coffee', sub: `buymeacoffee.com/${BMAC}`, icon: 'cup', url: `https://buymeacoffee.com/${BMAC}` });
-  WALLETS.forEach((w) => list.push({ name: w.name, sub: w.qr ? 'Scan the QR code or send to our number' : `Send to ${w.number}`, icon: 'phone', wallet: w }));
+  WALLETS.forEach((w) => list.push({ name: w.name, sub: w.qr ? (w.number ? 'Scan the QR code or send to our number' : 'Scan the QR code in your app') : `Send to ${w.number}`, icon: 'phone', wallet: w }));
   if (BANK) list.push({ name: 'Bank transfer', sub: BANK.bank, icon: 'bank', bank: BANK });
   LINKS.forEach((l) => list.push({ name: l.label, sub: new URL(l.url).hostname.replace(/^www\./, ''), icon: 'heart', url: l.url }));
   return list;
