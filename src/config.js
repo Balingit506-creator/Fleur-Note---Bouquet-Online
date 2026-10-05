@@ -1,6 +1,11 @@
 // Site settings. The site stays fully static either way.
 // Edit this file, then the dev server reloads (or run npm run build for the live site).
 const config = {
+  // You, the maker: your initials show as a small gold seal in the footer ("Made with ♥ by …").
+  //   initials → up to 4 letters, e.g. 'JB'; name → shown when someone hovers the seal (optional)
+  //   Leave initials empty to hide it.
+  creator: { initials: 'JB', name: '' },
+
   // Short links and photo storage.
   //   null      → the whole bouquet travels inside the share link; photos are shrunk (up to 3).
   //   Supabase  → bouquets are saved to your free Supabase project, so links are short

@@ -7,6 +7,7 @@ import Viewer from './components/viewer/Viewer.jsx';
 import { decode, freshState, sanitize } from './lib/bouquet.js';
 import { DRAFT_KEY, STEPS, stepIndex } from './lib/constants.js';
 import { ToastContext, useHash, useTheme } from './lib/hooks.js';
+import Footer from './components/Footer.jsx';
 import { popunderFor } from './lib/ads.js';
 import { store } from './lib/util.js';
 
@@ -103,6 +104,7 @@ export default function App() {
           onBadLink={() => { toast('That bouquet link looks incomplete. Here’s the studio instead.'); replaceHash('#studio'); }}
         />
       )}
+      {(view === 'home' || view === 'studio') && <Footer />}
       <Toast message={toastMsg} />
     </ToastContext.Provider>
   );

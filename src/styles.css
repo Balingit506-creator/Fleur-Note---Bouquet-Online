@@ -1211,3 +1211,114 @@ body[data-view="studio"] .view-studio { display: grid; }
 /* on the recipient's page messages show at the top, clear of the buttons */
 .view-viewer ~ .toast { top: 20px; bottom: auto; transform: translate(-50%, -20px); }
 .view-viewer ~ .toast.show { transform: translate(-50%, 0); }
+
+/* ---------- footer (home and studio) ---------- */
+.site-footer {
+  position: relative; margin-top: clamp(48px, 8vw, 96px); padding: 56px clamp(16px, 4vw, 48px) 28px;
+  border-top: 1px solid color-mix(in srgb, var(--gold) 30%, var(--line));
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--gold) 6%, transparent));
+}
+.site-footer::before { /* a small gold sprig on the top border */
+  content: '❦'; position: absolute; top: 0; left: 50%; transform: translate(-50%, -55%);
+  padding: 0 14px; font-size: 1.3rem; line-height: 1; color: var(--gold); background: var(--bg);
+}
+.sf-inner {
+  max-width: 1200px; margin: 0 auto; display: grid; gap: 32px clamp(24px, 4vw, 56px);
+  grid-template-columns: minmax(220px, 1.3fr) auto auto minmax(220px, 1.2fr);
+}
+.sf-tag { margin: 12px 0 0; font: italic 400 1.15rem/1.4 var(--serif); color: var(--muted); max-width: 26ch; }
+.sf-head { margin: 0 0 12px; font: 500 .7rem/1 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
+.sf-links { display: grid; align-content: start; gap: 10px; }
+.sf-links a { color: var(--ink); text-decoration: none; font-size: .92rem; width: fit-content; background: linear-gradient(var(--gold), var(--gold)) 0 100% / 0 1px no-repeat; transition: background-size .35s ease, color .2s; }
+.sf-links a:hover, .sf-links a:focus-visible { color: var(--accent); background-size: 100% 1px; }
+.sf-promise p:last-child { margin: 0; font-size: .88rem; line-height: 1.6; color: var(--muted); }
+.sf-bottom {
+  max-width: 1200px; margin: 40px auto 0; padding-top: 20px; border-top: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px;
+  font-size: .82rem; color: var(--muted);
+}
+.sf-bottom p { margin: 0; }
+.sf-fine { flex-basis: 100%; font-size: .74rem; opacity: .8; }
+.sf-sign { display: inline-flex; align-items: center; gap: 8px; }
+.sf-heart { color: var(--accent); display: inline-block; animation: heartbeat 2.4s ease-in-out infinite; }
+
+/* the creator's monogram, pressed like a little gold wax seal */
+.monogram {
+  position: relative; display: inline-grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  font: italic 600 1rem/1 var(--serif); letter-spacing: .02em; color: #fff8e6;
+  background: radial-gradient(circle at 35% 30%, #f0d48e, #b8914a 55%, #7a5c26);
+  box-shadow: inset 0 0 0 2px rgba(255, 243, 207, .5), inset 0 0 0 4px rgba(122, 92, 38, .35), 0 6px 14px -6px rgba(90, 60, 20, .6);
+  text-shadow: 0 1px 1px rgba(80, 50, 10, .55);
+  transition: transform .5s cubic-bezier(.2, .8, .2, 1.4);
+}
+.monogram::after { /* the seal's uneven rim */
+  content: ''; position: absolute; inset: -3px; border-radius: 47% 53% 50% 50% / 52% 48% 52% 48%;
+  border: 2px solid color-mix(in srgb, #b8914a 60%, transparent); pointer-events: none;
+}
+.sf-sign:hover .monogram, .monogram:focus-visible { transform: rotate(-12deg) scale(1.08); }
+.monogram:active { transform: scale(.9); transition-duration: .1s; }
+.monogram:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+
+@media (max-width: 860px) {
+  .sf-inner { grid-template-columns: 1fr 1fr; }
+  .sf-brand, .sf-promise { grid-column: 1 / -1; }
+}
+@media (max-width: 520px) {
+  .sf-bottom { flex-direction: column; align-items: flex-start; }
+}
+
+/* ---------- the cat that pops out of the monogram ---------- */
+.mono-wrap { position: relative; display: inline-grid; }
+.cat-pop {
+  position: absolute; right: -14px; bottom: calc(100% + 14px); z-index: 30; width: 190px;
+  display: grid; justify-items: center; gap: 6px; padding: 14px 14px 12px; border-radius: 20px;
+  background: var(--paper, #fffdf8); border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  box-shadow: 0 22px 44px -18px rgba(40, 20, 10, .55);
+  transform-origin: calc(100% - 35px) 100%;
+  animation: cat-pop-in .55s cubic-bezier(.2, .9, .25, 1.35) both;
+}
+.cat-pop::after { /* the little tail of the speech card, pointing at the seal */
+  content: ''; position: absolute; right: 29px; bottom: -8px; width: 14px; height: 14px; transform: rotate(45deg);
+  background: inherit; border: inherit; border-top: 0; border-left: 0;
+}
+@keyframes cat-pop-in { from { opacity: 0; transform: translateY(16px) scale(.3); } 70% { opacity: 1; } }
+.cat-say { font: 1.15rem/1.1 var(--hand, cursive); color: var(--accent); text-align: center; animation: fade-up .5s ease .35s both; }
+.cat-pop .pixel-cat { width: 128px; animation: cat-hop .5s ease-out .5s both; }
+@keyframes cat-hop { 40% { transform: translateY(-6px); } }
+
+/* the cat's own animations (from Cute.css), started right away: kiss, hearts, tail flicks, blinks */
+.pixel-cat { --kiss-cycle: 8.4s; --kiss-start: .6s; --tick: .12s; display: block; height: auto; shape-rendering: crispEdges; overflow: visible; }
+.pixel-cat .pc-tail-rest { animation: pc-tail-rest 4.8s step-end infinite; }
+.pixel-cat .pc-tail-swish { opacity: 0; animation: pc-tail-swish 4.8s step-end infinite; }
+@keyframes pc-tail-rest { 0%, 57.5%, 72.5% { opacity: 1; } 50%, 65% { opacity: 0; } }
+@keyframes pc-tail-swish { 0%, 57.5%, 72.5% { opacity: 0; } 50%, 65% { opacity: 1; } }
+.pixel-cat .pc-face { opacity: 0; animation: var(--kiss-cycle) step-end var(--kiss-start) infinite; }
+.pixel-cat .pc-face-kiss { animation-name: pc-kiss-face; }
+.pixel-cat .pc-face-blink { animation-name: pc-blink; }
+@keyframes pc-kiss-face { 0% { opacity: 1; } 20%, 100% { opacity: 0; } }
+@keyframes pc-blink { 0%, 45.714%, 81.429%, 100% { opacity: 0; } 42.857%, 78.571% { opacity: 1; } }
+.pixel-cat .pc-heart { opacity: 0; transform-box: fill-box; transform-origin: 0 100%; animation: pc-heart var(--kiss-cycle) step-end infinite; }
+.pixel-cat .pc-heart-1 { animation-delay: calc(var(--kiss-start) + 4 * var(--tick)); }
+.pixel-cat .pc-heart-2 { animation-delay: calc(var(--kiss-start) + 8 * var(--tick)); }
+.pixel-cat .pc-heart-3 { animation-delay: calc(var(--kiss-start) + 12 * var(--tick)); }
+@keyframes pc-heart {
+  0%      { opacity: 1; transform: translate(0, 0) scale(.6); }
+  1.429%  { transform: translate(2px, 0) scale(.6); }
+  2.857%  { transform: translate(4px, -1px) scale(.6); }
+  4.286%  { transform: translate(6px, -2px); }
+  5.714%  { transform: translate(7px, -3px); }
+  7.143%  { transform: translate(6px, -5px); }
+  8.571%  { transform: translate(6px, -6px); }
+  10%     { transform: translate(7px, -8px); }
+  11.429% { transform: translate(7px, -9px); }
+  12.857% { transform: translate(8px, -11px); }
+  14.286% { transform: translate(8px, -12px); }
+  15.714% { transform: translate(7px, -14px); }
+  17.143% { transform: translate(7px, -15px) scale(.6); }
+  18.571% { transform: translate(6px, -17px) scale(.6); }
+  20%     { transform: translate(6px, -18px) scale(.6); }
+  21.429% { transform: translate(7px, -20px) scale(.6); }
+  22.857%, 100% { opacity: 0; }
+}
+@media (max-width: 520px) { .cat-pop { right: auto; left: -14px; transform-origin: 35px 100%; } .cat-pop::after { right: auto; left: 29px; } }
+@media (prefers-reduced-motion: reduce) { .pixel-cat * { animation: none !important; } }
