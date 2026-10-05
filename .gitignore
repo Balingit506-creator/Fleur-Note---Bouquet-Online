@@ -1,0 +1,6 @@
+node_modules/
+dist/
+
+# trademarked character art: kept on this computer, not published
+public/AddOns/addon_puppy_charm.webp
+tools/source/addons_plush_sheet.png

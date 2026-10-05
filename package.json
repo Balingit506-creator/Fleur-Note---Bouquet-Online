@@ -1,0 +1,27 @@
+{
+  "name": "fleur-and-note",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Compose a digital bouquet, write a letter, and send it as a private link. A fully static site.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "catalogue": "node tools/build-manifest.js",
+    "art": "node tools/generate-art.js && node tools/build-manifest.js",
+    "wraps": "node tools/build-wraps.js satin && node tools/build-manifest.js",
+    "logo": "node tools/build-logo.js",
+    "clean-cutout": "node tools/clean-cutout.js",
+    "split-sheet": "node tools/split-sheet.js",
+    "setup-tools": "npx playwright install chromium"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "playwright": "^1.63.0",
+    "vite": "^8.3.2"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}
