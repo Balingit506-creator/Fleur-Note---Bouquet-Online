@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ASSETS } from '../../lib/assets.js';
 import { describe } from '../../lib/bouquet.js';
 import { FONTS, FRAMES, LONG_LINK, RIBBONS, SEALS, paperOf } from '../../lib/constants.js';
@@ -31,7 +31,13 @@ export default function Send({ state, lock, setLock, onStartOver }) {
     ['From', state.card.from || '—'],
     ['Password', lock.on ? (lock.pw.length >= 4 ? `On${lock.hint.trim() ? ` · hint “${lock.hint.trim()}”` : ''}` : 'On, choose a password') : 'Off'],
   ];
-  const size = ready ? estimateLinkSize(state, lock) : 0;
+  const [size, setSize] = useState(0);
+  useEffect(() => {
+    if (!ready) return setSize(0);
+    let live = true;
+    const t = setTimeout(() => estimateLinkSize(state, lock).then((n) => live && setSize(n)), 150);
+    return () => { live = false; clearTimeout(t); };
+  }, [state, lock, ready]);
 
   const guard = () => {
     if (!ready) { toast('Add a few stems first.'); return false; }
@@ -86,7 +92,7 @@ export default function Send({ state, lock, setLock, onStartOver }) {
         )}
       </div>
 
-      {ready && (
+      {ready && size > 0 && (
         <p className={`hint${size > LONG_LINK ? ' warn' : ''}`}>
           {size > LONG_LINK
             ? `Link size: ${Math.round(size / 1024)} KB. That is long: it works in browsers and email, but some chat apps may cut it off. Fewer photos keep it short.`

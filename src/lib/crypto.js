@@ -1,5 +1,6 @@
 // Password-locked links: the bouquet is encrypted inside the link (AES-GCM, key from PBKDF2).
-import { encode, shareBase, shareLink } from './bouquet.js';
+import { shareBase } from './bouquet.js';
+import { bouquetLink, sealedPayload } from './link.js';
 
 const b64u = {
   enc: (bytes) => { let s = ''; bytes.forEach((b) => (s += String.fromCharCode(b))); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
@@ -32,11 +33,14 @@ export async function unseal(str, pw) {
 export const lockReady = (lock) => !lock.on || lock.pw.length >= 4;
 
 export async function makeLink(st, lock) {
-  if (!lock.on) return shareLink(st);
+  if (!lock.on) return bouquetLink(st);
   if (!window.crypto?.subtle) throw new Error('Password links need the site to be opened over https or localhost.');
   const hint = lock.hint.trim() ? `&h=${encodeURIComponent(lock.hint.trim())}` : '';
-  return `${shareBase()}#e=${await seal(encode(st), lock.pw)}${hint}`;
+  return `${shareBase()}#e=${await seal(await sealedPayload(st), lock.pw)}${hint}`;
 }
 
 // Sealed links carry the same bouquet encrypted (about a third longer).
-export const estimateLinkSize = (st, lock) => (lock.on ? Math.round(shareLink(st).length * 1.34 + 60 + lock.hint.length * 3) : shareLink(st).length);
+export const estimateLinkSize = async (st, lock) => {
+  const n = (await bouquetLink(st)).length;
+  return lock.on ? Math.round(n * 1.34 + 60 + lock.hint.length * 3) : n;
+};

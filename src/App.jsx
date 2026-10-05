@@ -17,6 +17,7 @@ function parseRoute(hash) {
     const q = new URLSearchParams(hash.slice(1));
     return { view: 'viewer', sealed: q.get('e') || '', hint: q.get('h') || '' };
   }
+  if (hash.startsWith('#z=')) return { view: 'viewer', packed: hash.slice(3) };
   if (hash.startsWith('#b=')) {
     const st = decode(hash.slice(3));
     return st && st.stems.length ? { view: 'viewer', st } : { view: 'bad-link' };
@@ -93,7 +94,12 @@ export default function App() {
           onStartOver={() => { resetDraft(); setStep(0); }}
         />
       )}
-      {view === 'viewer' && <Viewer key={hash} route={route} onSendBack={sendBack} />}
+      {view === 'viewer' && (
+        <Viewer
+          key={hash} route={route} onSendBack={sendBack}
+          onBadLink={() => { toast('That bouquet link looks incomplete. Here’s the studio instead.'); replaceHash('#studio'); }}
+        />
+      )}
       <Toast message={toastMsg} />
     </ToastContext.Provider>
   );

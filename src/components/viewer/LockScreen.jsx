@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { decode } from '../../lib/bouquet.js';
+import { readSealedPayload } from '../../lib/link.js';
 import { unseal } from '../../lib/crypto.js';
 
 /* Password-locked links: the bouquet only decrypts with the right password. */
@@ -18,7 +18,7 @@ export default function LockScreen({ sealed, hint, onUnlock }) {
     setBusy(true);
     setError('');
     try {
-      const st = decode(await unseal(sealed, pw));
+      const st = await readSealedPayload(await unseal(sealed, pw));
       if (!st || !st.stems.length) throw new Error('empty');
       onUnlock(st);
     } catch {

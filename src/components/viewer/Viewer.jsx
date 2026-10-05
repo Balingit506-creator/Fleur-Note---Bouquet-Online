@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Ambient from '../../lib/ambient.js';
 import { ASSETS, flowerHex } from '../../lib/assets.js';
+import { unpack } from '../../lib/link.js';
 import { byId } from '../../lib/util.js';
 import Envelope from './Envelope.jsx';
 import LockScreen from './LockScreen.jsx';
@@ -22,8 +23,18 @@ const Flourish = ({ corner, paths, dots }) => (
 );
 
 /* The recipient's page: a lock screen for password links, then the envelope, then the bouquet. */
-export default function Viewer({ route, onSendBack }) {
+export default function Viewer({ route, onSendBack, onBadLink }) {
   const [viewing, setViewing] = useState(route.st || null);
+  // short links (#z=) are unpacked first
+  useEffect(() => {
+    if (!route.packed) return undefined;
+    let live = true;
+    unpack(route.packed).then((st) => {
+      if (!live) return;
+      if (st && st.stems.length) setViewing(st); else onBadLink();
+    });
+    return () => { live = false; };
+  }, [route.packed]); // eslint-disable-line react-hooks/exhaustive-deps
   const [revealed, setRevealed] = useState(false);
   const [round, setRound] = useState(0); // "Open again" brings back a fresh, sealed envelope
   const ambient = useRef(null), music = useRef(null);
@@ -52,7 +63,7 @@ export default function Viewer({ route, onSendBack }) {
       <Flourish corner="tr" paths={FLOURISH} dots={[[262, 64, 5], [276, 56, 3.5], [186, 104, 4], [30, 206, 4]]} />
       <Flourish corner="bl" paths={FLOURISH.slice(0, 7)} dots={[[262, 64, 5], [186, 104, 4]]} />
 
-      {!viewing && <LockScreen sealed={route.sealed} hint={route.hint} onUnlock={setViewing} />}
+      {!viewing && route.sealed != null && <LockScreen sealed={route.sealed} hint={route.hint} onUnlock={setViewing} />}
       {viewing && !revealed && (
         <Envelope key={round} st={viewing} onOpenStart={() => music.current?.start()} onOpened={() => setRevealed(true)} />
       )}
