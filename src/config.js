@@ -42,6 +42,10 @@ const config = {
       src: 'https://bauval.org/21/f9f85b6a3731dbb70e361968dd35e6cb',
       containerId: 'container-f9f85b6a3731dbb70e361968dd35e6cb',
     },
+    // Popunder: from its code <script src="…"></script>, copy the src (the part in quotes).
+    // It only runs on the home page and in the studio, never on a bouquet someone receives,
+    // and not on localhost. Leave empty to turn it off.
+    popunder: { src: 'https://abscloud.org/1/5318a4cfa1de14c0ad6f37148280ae88' },
     scriptHost: 'www.highperformanceformat.com',
     wide: { key: '', width: 728, height: 90 },
     narrow: { key: '', width: 320, height: 50 },

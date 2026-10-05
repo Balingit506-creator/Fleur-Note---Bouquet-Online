@@ -20,6 +20,30 @@ export const AD_NATIVE = (() => {
   } catch { return null; }
 })();
 
+// Popunder: one script for the whole site, from Adsterra's code <script src="…">.
+export const AD_POPUNDER = (() => {
+  try {
+    const raw = (ADS.popunder?.src || '').trim();
+    const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
+    return u.protocol === 'https:' && u.pathname.length > 1 ? u.href : null;
+  } catch { return null; }
+})();
+
+// Loads the popunder on the home page and in the studio only. Never on a received bouquet:
+// if one is opened in a tab that already has it, the page reloads without it.
+let popLoaded = false;
+export function popunderFor(view) {
+  if (!AD_POPUNDER || isLocal) return;
+  if (view === 'viewer') { if (popLoaded) location.reload(); return; }
+  if (popLoaded || (view !== 'home' && view !== 'studio')) return;
+  popLoaded = true;
+  const s = document.createElement('script');
+  s.src = AD_POPUNDER;
+  s.async = true;
+  s.dataset.cfasync = 'false';
+  document.body.append(s);
+}
+
 export const adsReady = !!(AD_NATIVE || AD_WIDE || AD_NARROW);
 // Live site: no slots until a banner is set up. Locally, placeholders show where they'll go.
 export const showAds = adsReady || isLocal;
