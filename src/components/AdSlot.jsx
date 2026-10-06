@@ -48,7 +48,7 @@ export default function AdSlot({ className = '', banner = false }) {
   const [room, setRoom] = useState(0);
   useLayoutEffect(() => {
     const ro = new ResizeObserver(([e]) => setRoom(Math.floor(e.contentRect.width)));
-    ro.observe(box.current);
+    ro.observe(box.current.parentElement); // the space around it, so a hidden spot still knows when a banner fits
     return () => ro.disconnect();
   }, []);
 
@@ -59,7 +59,8 @@ export default function AdSlot({ className = '', banner = false }) {
   const [filled, setFilled] = useState(false);
   // a native ad that hasn't arrived (yet) leaves no empty frame; on this computer a note explains
   const waiting = native && !filled;
-  const hidden = waiting && !isLocal; // same elements either way, so the ad isn't lost when it arrives
+  // same elements either way, so the ad isn't lost when it arrives; a banner too wide for the spot leaves no empty frame
+  const hidden = (waiting && !isLocal) || (!native && !unit && !placeholder);
 
   return (
     <aside className={`ad-slot ${className}${hidden ? ' ad-waiting' : ''}`} ref={box} aria-label="Advertisement" aria-hidden={hidden || undefined}>
