@@ -43,6 +43,13 @@ export default function Topbar({ theme, onToggleTheme }) {
             </a>
           )}
           {showIdeas && <a href="#ideas" className="navlink">Suggestions</a>}
+          {/* phones only: the call to action moves into the menu */}
+          <a href="#studio/blooms" className="btn nav-cta nav-cta-menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Tie a bouquet
+          </a>
         </div>
         <button
           className="theme-toggle"
@@ -61,11 +68,11 @@ export default function Topbar({ theme, onToggleTheme }) {
             <path d="M17 3.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" />
           </svg>
         </button>
-        <a href="#studio/blooms" className="btn btn-small nav-cta">
+        <a href="#studio/blooms" className="btn btn-small nav-cta nav-cta-bar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          Tie<span className="nav-cta-long"> a bouquet</span>
+          Tie a bouquet
         </a>
         <button
           className="menu-toggle"
