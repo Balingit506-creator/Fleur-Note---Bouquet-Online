@@ -8,7 +8,7 @@ import { decode, freshState, sanitize } from './lib/bouquet.js';
 import { DRAFT_KEY, STEPS, stepIndex } from './lib/constants.js';
 import { ToastContext, useHash, useTheme } from './lib/hooks.js';
 import Footer from './components/Footer.jsx';
-import { popunderFor } from './lib/ads.js';
+import { socialBarFor } from './lib/ads.js';
 import { store } from './lib/util.js';
 
 const DEFAULT_TITLE = 'Fleur & Note — Digital Bouquets';
@@ -57,7 +57,7 @@ export default function App() {
   }, []);
 
   /* ---------- routing side effects ---------- */
-  useEffect(() => { popunderFor(route.view); }, [route.view]);
+  useEffect(() => { socialBarFor(route.view); }, [route.view]);
   useEffect(() => {
     if (route.view === 'bad-link') {
       toast('That bouquet link looks incomplete. Here’s the studio instead.');

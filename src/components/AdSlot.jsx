@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AD_NARROW, AD_NATIVE, AD_WIDE, adsReady, bannerDoc } from '../lib/ads.js';
+import { AD_NARROW, AD_NATIVE, AD_WIDE, bannerDoc } from '../lib/ads.js';
 import { isLocal } from '../lib/util.js';
 
 /* Adsterra's Native Banner: its script fills the container with the matching id. Only one
@@ -40,9 +40,10 @@ function NativeAd({ ad, onFilled }) {
   return mine ? <div className="ad-native" id={ad.containerId} ref={box} /> : null;
 }
 
-/* One banner ad. Picks the wide banner where it fits, else the narrow one; on this computer,
-   before any banner is set up, it shows a placeholder of the right size instead. */
-export default function AdSlot({ className = '' }) {
+/* One ad spot: the native ad when there is one (unless `banner` asks for the banner), else a
+   banner. Picks the wide banner where it fits, else the narrow one; on this computer, before
+   the banner is set up, it shows a placeholder of the right size instead. */
+export default function AdSlot({ className = '', banner = false }) {
   const box = useRef(null);
   const [room, setRoom] = useState(0);
   useLayoutEffect(() => {
@@ -53,18 +54,19 @@ export default function AdSlot({ className = '' }) {
 
   const wideFits = AD_WIDE && room >= AD_WIDE.width;
   const unit = wideFits ? AD_WIDE : AD_NARROW && room >= AD_NARROW.width ? AD_NARROW : null;
-  const placeholder = !adsReady && (room >= 728 ? { width: 728, height: 90 } : { width: 320, height: 50 });
+  const native = !banner && AD_NATIVE;
+  const placeholder = isLocal && !AD_WIDE && !AD_NARROW && (room >= 728 ? { width: 728, height: 90 } : { width: 320, height: 50 });
   const [filled, setFilled] = useState(false);
   // a native ad that hasn't arrived (yet) leaves no empty frame; on this computer a note explains
-  const waiting = AD_NATIVE && !filled;
+  const waiting = native && !filled;
   const hidden = waiting && !isLocal; // same elements either way, so the ad isn't lost when it arrives
 
   return (
     <aside className={`ad-slot ${className}${hidden ? ' ad-waiting' : ''}`} ref={box} aria-label="Advertisement" aria-hidden={hidden || undefined}>
-      <div className={`ad-frame${AD_NATIVE ? ' ad-frame-native' : ''}`}>
+      <div className={`ad-frame${native ? ' ad-frame-native' : ''}`}>
         <span className="ad-label">Advertisement</span>
         {['tl', 'tr', 'bl', 'br'].map((c) => <Sprig key={c} corner={c} />)}
-        {AD_NATIVE ? <NativeAd ad={AD_NATIVE} onFilled={setFilled} /> : <AdContent unit={unit} placeholder={placeholder} />}
+        {native ? <NativeAd ad={native} onFilled={setFilled} /> : <AdContent unit={unit} placeholder={placeholder} />}
         {waiting && isLocal && <p className="ad-note">Your Adsterra native ad is connected. Ads usually only fill on your registered website, not on localhost.</p>}
       </div>
     </aside>

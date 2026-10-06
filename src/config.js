@@ -34,12 +34,14 @@ const config = {
     email: '',
   },
 
-  // Adsterra banner ads (home page and studio). From each banner's code in your Adsterra dashboard
-  // ("Get code"), copy the 'key' and the size. scriptHost is the address in the code's
-  // src="//…/invoke.js" (e.g. 'www.highperformanceformat.com').
+  // Adsterra ads (home page and studio).
+  // Banner: from each banner's code in your Adsterra dashboard ("Get code"), copy the 'key' and
+  // the size. scriptHost is the address in the code's src="//…/invoke.js"
+  // (e.g. 'www.highperformanceformat.com').
   //   wide   → shown where there's room, e.g. 728×90
   //   narrow → shown on phones, e.g. 320×50 (leave key empty to use only the wide one)
-  // While both keys are empty no ads load on the live site.
+  // With a native ad set too, the banner gets its own spot on the home page, below the support section.
+  // While every key is empty no ads load on the live site.
   ads: {
     // Native Banner: from its code, the script's src="…" and the container's id="…".
     // When set, the ad spots show this native ad (it resizes to fit) instead of the banners below.
@@ -47,10 +49,10 @@ const config = {
       src: 'https://bauval.org/21/f9f85b6a3731dbb70e361968dd35e6cb',
       containerId: 'container-f9f85b6a3731dbb70e361968dd35e6cb',
     },
-    // Popunder: from its code <script src="…"></script>, copy the src (the part in quotes).
+    // Social Bar: from its code <script src="…"></script>, copy the src (the part in quotes).
     // It only runs on the home page and in the studio, never on a bouquet someone receives,
     // and not on localhost. Leave empty to turn it off.
-    popunder: { src: 'https://abscloud.org/1/5318a4cfa1de14c0ad6f37148280ae88' },
+    socialBar: { src: 'https://bauval.org/14/9f2281bf9d65189e98bf365e62bbd736' },
     scriptHost: 'www.highperformanceformat.com',
     wide: { key: '', width: 728, height: 90 },
     narrow: { key: '', width: 320, height: 50 },

@@ -8,7 +8,7 @@ import { showShelf } from '../lib/affiliate.js';
 import { SupportPanel } from './Donate.jsx';
 import GiftShelf from './GiftShelf.jsx';
 import AdSlot from './AdSlot.jsx';
-import { showAds, useAdFree } from '../lib/ads.js';
+import { showAds, showBanner, useAdFree } from '../lib/ads.js';
 import Ideas from './Ideas.jsx';
 
 export default function Home({ anchor }) {
@@ -81,6 +81,8 @@ export default function Home({ anchor }) {
           </div>
         </section>
       )}
+
+      {showBanner && !adFree && <div className="ad-row"><AdSlot banner /></div>}
 
       {showIdeas && <Ideas />}
     </main>

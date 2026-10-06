@@ -21,10 +21,10 @@ export const AD_NATIVE = (() => {
   } catch { return null; }
 })();
 
-// Popunder: one script for the whole site, from Adsterra's code <script src="…">.
-export const AD_POPUNDER = (() => {
+// Social Bar: one script for the whole site, from Adsterra's code <script src="…">.
+export const AD_SOCIAL_BAR = (() => {
   try {
-    const raw = (ADS.popunder?.src || '').trim();
+    const raw = (ADS.socialBar?.src || '').trim();
     const u = new URL(raw.startsWith('//') ? `https:${raw}` : raw);
     return u.protocol === 'https:' && u.pathname.length > 1 ? u.href : null;
   } catch { return null; }
@@ -42,8 +42,8 @@ export function grantAdFree() {
   adFree = true;
   store.set(AD_FREE_KEY, { since: Date.now() });
   adFreeListeners.forEach((fn) => fn());
-  // A popunder script can't be unloaded, so reload quietly once they come back from paying.
-  if (popLoaded) {
+  // The Social Bar script can't be unloaded, so reload quietly once they come back from paying.
+  if (barLoaded) {
     const onBack = () => { if (document.visibilityState === 'visible') location.reload(); };
     document.addEventListener('visibilitychange', onBack);
   }
@@ -53,21 +53,21 @@ window.addEventListener('storage', (e) => {
   if (e.key !== AD_FREE_KEY || !e.newValue || adFree) return;
   adFree = true;
   adFreeListeners.forEach((fn) => fn());
-  if (popLoaded) location.reload();
+  if (barLoaded) location.reload();
 });
 const subscribeAdFree =(fn) => { adFreeListeners.add(fn); return () => adFreeListeners.delete(fn); };
 export const useAdFree = () => useSyncExternalStore(subscribeAdFree, () => adFree);
 
-// Loads the popunder on the home page and in the studio only. Never on a received bouquet:
+// Loads the Social Bar on the home page and in the studio only. Never on a received bouquet:
 // if one is opened in a tab that already has it, the page reloads without it.
-let popLoaded = false;
-export function popunderFor(view) {
-  if (!AD_POPUNDER || isLocal || adFree) return;
-  if (view === 'viewer') { if (popLoaded) location.reload(); return; }
-  if (popLoaded || (view !== 'home' && view !== 'studio')) return;
-  popLoaded = true;
+let barLoaded = false;
+export function socialBarFor(view) {
+  if (!AD_SOCIAL_BAR || isLocal || adFree) return;
+  if (view === 'viewer') { if (barLoaded) location.reload(); return; }
+  if (barLoaded || (view !== 'home' && view !== 'studio')) return;
+  barLoaded = true;
   const s = document.createElement('script');
-  s.src = AD_POPUNDER;
+  s.src = AD_SOCIAL_BAR;
   s.async = true;
   s.dataset.cfasync = 'false';
   document.body.append(s);
@@ -76,6 +76,8 @@ export function popunderFor(view) {
 export const adsReady = !!(AD_NATIVE || AD_WIDE || AD_NARROW);
 // Live site: no slots until a banner is set up. Locally, placeholders show where they'll go.
 export const showAds = adsReady || isLocal;
+// The native ad holds the main spot, so a banner set up alongside it gets a spot of its own.
+export const showBanner = !!AD_NATIVE && (!!(AD_WIDE || AD_NARROW) || isLocal);
 
 // The banner's own little page: Adsterra's code relies on one global atOptions, so each banner
 // runs in its own frame and several can share a page.
