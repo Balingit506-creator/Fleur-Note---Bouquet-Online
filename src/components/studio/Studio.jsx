@@ -8,12 +8,13 @@ import { Blooms, Greenery, Letter, Occasion, Wrap } from './panels.jsx';
 import Send from './Send.jsx';
 import Stage from './Stage.jsx';
 import AdSlot from '../AdSlot.jsx';
-import { showAds } from '../../lib/ads.js';
+import { showAds, useAdFree } from '../../lib/ads.js';
 
 const PANELS = { occasion: Occasion, blooms: Blooms, greenery: Greenery, wrap: Wrap, letter: Letter, extras: Extras, send: Send };
 
 export default function Studio({ state, update, step, setStep, onStartOver }) {
   const toast = useToast();
+  const adFree = useAdFree();
   const panelCol = useRef(null);
   const [lock, setLock] = useState({ on: false, pw: '', hint: '' }); // kept in memory only, never saved
   const [fresh, setFresh] = useState(null); // a just-added stem pops in
@@ -74,7 +75,7 @@ export default function Studio({ state, update, step, setStep, onStartOver }) {
             </button>
           )}
         </footer>
-        {showAds && <AdSlot className="ad-in-panel" />}
+        {showAds && !adFree && <AdSlot className="ad-in-panel" />}
       </section>
     </main>
   );

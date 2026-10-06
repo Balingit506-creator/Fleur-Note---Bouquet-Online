@@ -82,7 +82,13 @@ const config = {
     currency: 'USD',          // three-letter code, e.g. 'USD', 'EUR', 'PHP'
     amounts: [3, 5, 10, 25],  // preset buttons
 
-    // PayPal: fill in ONE. paypalMe = the part after paypal.me/ ; business = your PayPal email
+    // PayPal app Client ID (developer.paypal.com → Apps & Credentials). Public by design, so it's
+    // fine here; NEVER put the Secret in this file. With it, donors pay by PayPal or card right
+    // on the page, and ads switch off for them once the payment completes.
+    paypalClientId: 'BAAG2xz4JFuGJIJzP9gdgtoYNxCruWQsS3uOQkEhotp6MYdI-N0NFkmlhveG1y3_Dg4RYFYgsnhqCWRVvE',
+
+    // PayPal link, used where the buttons above aren't shown. Fill in ONE. paypalMe = the part
+    // after paypal.me/ ; business = your PayPal email
     paypalMe: 'JuarenBalingit',
     business: '',
 
@@ -94,9 +100,10 @@ const config = {
     buymeacoffee: '',         // buymeacoffee.com/<name>
 
     // E-wallets shown with your QR code and number (put QR images in the Donate/ folder)
+    // Switched off for now; uncomment to bring them back (the QR images are still in Donate/).
     wallets: [
-      { name: 'GCash', qr: 'Donate/gcash-qr.png' },
-      { name: 'Maya', qr: 'Donate/maya-qr.png' },
+      // { name: 'GCash', qr: 'Donate/gcash-qr.png' },
+      // { name: 'Maya', qr: 'Donate/maya-qr.png' },
     ],
 
     // Bank transfer details

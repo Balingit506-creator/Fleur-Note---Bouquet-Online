@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react';
-import { DONATE_AMOUNTS, DONATE_CUR, donateMethods, money } from '../lib/donate.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { DONATE_AMOUNTS, DONATE_CUR, PAYPAL_CLIENT_ID, donateMethods, money } from '../lib/donate.js';
 import { useToast } from '../lib/hooks.js';
+import { grantAdFree, useAdFree } from '../lib/ads.js';
+import { loadPayPal } from '../lib/paypal.js';
 import { copyText } from '../lib/util.js';
 
 const ICONS = {
@@ -44,6 +46,154 @@ export default function Donate() {
       </button>
       <p className="hint">{ways.length ? `Next, choose how to give: ${ways.join(', ')}.` : 'Next, choose how to give.'}</p>
       <DonateDialog dialogRef={dialog} amount={chosen} detail={detail} setDetail={setDetail} />
+    </div>
+  );
+}
+
+// Names for the amount tiles, in order; amounts themselves come from config.
+const TIERS = [
+  { emoji: '🌷', label: 'A single stem' },
+  { emoji: '💐', label: 'A little posy' },
+  { emoji: '🌹', label: 'A dozen roses' },
+  { emoji: '💝', label: 'A full bouquet' },
+  { emoji: '🎀', label: 'The whole shop' },
+  { emoji: '✨', label: 'Pure magic' },
+];
+const CUR_SYMBOL = money(1).replace(/[\d.,\s]/g, '') || '$';
+
+/* The home page's support panel: amount tiles, then PayPal's own buttons (PayPal or card, paid
+   right on the page) plus any other ways to give. A completed PayPal payment unlocks ad-free. */
+export function SupportPanel() {
+  const toast = useToast();
+  const adFree = useAdFree();
+  const [chosen, setChosen] = useState(DONATE_AMOUNTS[Math.min(1, DONATE_AMOUNTS.length - 1)] || 0);
+  const [custom, setCustom] = useState('');
+  const dialog = useRef(null);
+  const [detail, setDetail] = useState(null);
+  // with the in-page buttons, the plain PayPal link would only be a second PayPal button
+  const methods = donateMethods(chosen).filter((m) => !(PAYPAL_CLIENT_ID && m.url && /paypal\.com/.test(m.url)));
+  const isCustom = custom !== '';
+
+  const give = (m) => {
+    if (m.url) { window.open(m.url, '_blank', 'noopener'); toast('Opened in a new tab. Thank you!'); return; }
+    setDetail(m);
+    dialog.current.showModal();
+  };
+  const paid = useCallback(() => {
+    grantAdFree();
+    toast('Thank you! Your gift went through, and the ads are off for you, for good.');
+  }, [toast]);
+
+  return (
+    <div className="sp">
+      <p className="sp-title">Choose an amount</p>
+      <div className="sp-tiles">
+        {DONATE_AMOUNTS.map((n, i) => (
+          <button
+            key={n} className="sp-tile" type="button" aria-pressed={!isCustom && n === chosen}
+            onClick={() => { setChosen(n); setCustom(''); }}
+          >
+            <span className="sp-emoji" aria-hidden="true">{TIERS[i]?.emoji || '🌸'}</span>
+            <b>{money(n)}</b>
+            <small>{TIERS[i]?.label || 'A lovely gift'}</small>
+          </button>
+        ))}
+        <label className={`sp-tile sp-other${isCustom ? ' is-on' : ''}`}>
+          <span className="sp-other-amt">
+            <span aria-hidden="true">{CUR_SYMBOL}</span>
+            <input
+              type="number" min="1" step="1" inputMode="decimal" placeholder="Other"
+              aria-label={`Other amount in ${DONATE_CUR}`} value={custom}
+              onChange={(e) => { setCustom(e.target.value); setChosen(+e.target.value || 0); }}
+            />
+          </span>
+          <small>Your choice</small>
+        </label>
+      </div>
+
+      {PAYPAL_CLIENT_ID && (adFree ? (
+        <p className="sp-note is-on"><span aria-hidden="true">✦</span> Your <b>ad-free pass</b> is active. Thank you!</p>
+      ) : (
+        <p className="sp-note"><span aria-hidden="true">✦</span> Any gift = <b>ad-free for life</b></p>
+      ))}
+
+      <div className="sp-ways">
+        {PAYPAL_CLIENT_ID && <PayPalButtons amount={chosen} onPaid={paid} />}
+        {methods.map((m) => (
+          <button key={m.name} className="sp-way" type="button" onClick={() => give(m)}>
+            <Icon name={m.icon} /><span>{m.name}</span>
+          </button>
+        ))}
+        {!PAYPAL_CLIENT_ID && !methods.length && NOT_SET_UP.slice(0, 3).map((n) => (
+          <span key={n} className="sp-way is-off"><Icon name="heart" /><span>{n}</span></span>
+        ))}
+      </div>
+
+      {PAYPAL_CLIENT_ID || methods.length ? (
+        <p className="sp-fine">Payments are handled securely by PayPal. Fleur &amp; Note never sees your card details.</p>
+      ) : (
+        <p className="fineprint">Local preview: fill in your payment details in src/config.js → donate to switch these on. Until then the support section is hidden on the live site.</p>
+      )}
+      <DonateDialog dialogRef={dialog} amount={chosen} detail={detail} setDetail={setDetail} />
+    </div>
+  );
+}
+
+/* PayPal's Smart Buttons: a PayPal button and a "Debit or Credit Card" button. */
+function PayPalButtons({ amount, onPaid }) {
+  const toast = useToast();
+  const box = useRef(null);
+  const [state, setState] = useState('loading'); // loading | ready | failed
+  const [cardOpen, setCardOpen] = useState(false); // PayPal's card form is showing
+
+  // Two buttons are ~110px tall; anything much taller means the card form has opened.
+  useEffect(() => {
+    if (!box.current || !window.ResizeObserver) return undefined;
+    const ro = new ResizeObserver(([e]) => setCardOpen(e.contentRect.height > 170));
+    ro.observe(box.current);
+    return () => ro.disconnect();
+  }, []);
+  // the buttons are drawn once, so they read the latest amount and callback through refs
+  const amountRef = useRef(amount);
+  const paidRef = useRef(onPaid);
+  amountRef.current = amount;
+  paidRef.current = onPaid;
+
+  useEffect(() => {
+    let buttons = null;
+    let gone = false;
+    loadPayPal().then((paypal) => {
+      if (gone || !box.current) return;
+      buttons = paypal.Buttons({
+        style: { layout: 'vertical', shape: 'pill', color: 'black', label: 'paypal', height: 48, tagline: false },
+        onClick: (_data, actions) => {
+          if (!(amountRef.current >= 1)) { toast('Please choose an amount first.'); return actions.reject(); }
+          return actions.resolve();
+        },
+        createOrder: (_data, actions) => actions.order.create({
+          purchase_units: [{
+            description: 'A gift to Fleur & Note',
+            amount: { currency_code: DONATE_CUR, value: (Math.round(amountRef.current * 100) / 100).toFixed(2) },
+          }],
+          application_context: { shipping_preference: 'NO_SHIPPING', brand_name: 'Fleur & Note' },
+        }),
+        onApprove: async (_data, actions) => {
+          const order = await actions.order.capture();
+          if (order?.status === 'COMPLETED') paidRef.current(order);
+          else toast('PayPal didn’t finish the payment, so nothing was charged. Please try again.');
+        },
+        onError: () => toast('PayPal ran into a problem. Nothing was charged; please try again.'),
+      });
+      return buttons.render(box.current).then(() => !gone && setState('ready'));
+    }).catch(() => { if (!gone) setState('failed'); });
+    return () => { gone = true; buttons?.close?.().catch(() => {}); };
+  }, [toast]);
+
+  return (
+    <div className={`sp-paypal${cardOpen ? ' is-open' : ''}`}>
+      <div ref={box} />
+      {state === 'loading' && <div className="sp-paypal-wait" aria-hidden="true"><span /><span /></div>}
+      {state === 'failed' && <p className="hint">PayPal couldn’t load. Check your connection or turn off any blocker, then refresh.</p>}
     </div>
   );
 }

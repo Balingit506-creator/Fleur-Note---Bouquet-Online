@@ -32,7 +32,8 @@ function Monogram() {
       {shown > 0 && (
         <span className="cat-pop" key={shown} role="status">
           <PixelCat />
-          <span className="cat-say">mwah! thanks for visiting ♥</span>
+          <span className="cat-say">mwah! thanks for visiting&nbsp;♥</span>
+          <span className="cat-dedication">dedicated to LJC</span>
         </span>
       )}
     </span>

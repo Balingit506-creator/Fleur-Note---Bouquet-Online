@@ -5,13 +5,14 @@ import { OCCASIONS } from '../lib/constants.js';
 import { showDonate, showIdeas } from '../lib/donate.js';
 import Bouquet from './Bouquet.jsx';
 import { showShelf } from '../lib/affiliate.js';
-import Donate from './Donate.jsx';
+import { SupportPanel } from './Donate.jsx';
 import GiftShelf from './GiftShelf.jsx';
 import AdSlot from './AdSlot.jsx';
-import { showAds } from '../lib/ads.js';
+import { showAds, useAdFree } from '../lib/ads.js';
 import Ideas from './Ideas.jsx';
 
 export default function Home({ anchor }) {
+  const adFree = useAdFree();
   const demo = useMemo(() => {
     const st = applyOccasionTo(freshState(), OCCASIONS[0], 20240214);
     st.addons = st.addons.filter((id) => !/fluffy_heart/.test(id)); // the hero shows the teddy only
@@ -55,22 +56,28 @@ export default function Home({ anchor }) {
 
       {showShelf && <GiftShelf />}
 
-      {showAds && <div className="ad-row"><AdSlot /></div>}
+      {showAds && !adFree && <div className="ad-row"><AdSlot /></div>}
 
       {showDonate && (
         <section className="support" id="support">
           <div className="support-card">
-            <div className="support-art" aria-hidden="true">
-              <span className="sa-halo" />
-              <img className="sa-emoji" src="img/support-emoji.webp?v=2" alt="" width="347" height="360" loading="lazy" />
-              <span className="sa-heart h1">♥</span><span className="sa-heart h2">♥</span><span className="sa-heart h3">♥</span>
-            </div>
             <div className="support-body">
               <p className="eyebrow">Support Fleur &amp; Note</p>
-              <h2>Keep the flowers free</h2>
-              <p className="support-copy">No accounts, no checkout, and never an ad inside the gifts you send. If a bouquet made someone smile, a small gift helps keep it that way.</p>
-              <Donate />
+              <h2>Keep the flowers <em>free</em></h2>
+              <p className="support-copy">Fleur &amp; Note is free, with no accounts and no checkout. If a bouquet made someone smile, a small gift keeps it running and pays for new blooms.</p>
+              <ul className="support-perks">
+                <li>Any gift turns off the ads for you, for good</li>
+                <li>Never an ad inside the bouquets you send</li>
+                <li>No watermarks, no sign-ups, ever</li>
+                <li>Hosting and upkeep paid for by people like you</li>
+              </ul>
+              <div className="support-art" aria-hidden="true">
+                <span className="sa-halo" />
+                <img className="sa-emoji" src="img/support-emoji.webp?v=2" alt="" width="347" height="360" loading="lazy" />
+                <span className="sa-heart h1">♥</span><span className="sa-heart h2">♥</span><span className="sa-heart h3">♥</span>
+              </div>
             </div>
+            <SupportPanel />
           </div>
         </section>
       )}

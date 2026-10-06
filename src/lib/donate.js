@@ -10,7 +10,8 @@ const okHttps = (v) => { try { const u = new URL(v); return u.protocol === 'http
 const okImg = (v) => (typeof v === 'string' && (/^[\w\-./ ]+\.(png|jpe?g|webp|svg)$/i.test(v) && !v.includes('..') ? v : okHttps(v)));
 const PAYPAL_ME = /^[A-Za-z0-9]{1,20}$/.test(DONATE.paypalMe || '') ? DONATE.paypalMe : '';
 const PAYPAL_BIZ = typeof DONATE.business === 'string' && /^[^\s"'<>]{3,127}$/.test(DONATE.business) ? DONATE.business : '';
-const STRIPE = okHttps(DONATE.stripeLink || '');
+export const PAYPAL_CLIENT_ID = /^[A-Za-z0-9_-]{20,128}$/.test(DONATE.paypalClientId || '') ? DONATE.paypalClientId : '';
+const STRIPE =okHttps(DONATE.stripeLink || '');
 const KOFI = okName(DONATE.kofi), BMAC = okName(DONATE.buymeacoffee);
 const WALLETS = (Array.isArray(DONATE.wallets) ? DONATE.wallets : [])
   .filter((w) => w && typeof w.name === 'string' && (w.number || w.qr))
@@ -47,7 +48,7 @@ export function donateMethods(amount) {
   return list;
 }
 
-export const donateReady = donateMethods(0).length > 0;
+export const donateReady = donateMethods(0).length > 0 || !!PAYPAL_CLIENT_ID;
 // Live site: hidden until at least one method is set up. Locally, preview it anyway.
 export const showDonate = donateReady || isLocal;
 

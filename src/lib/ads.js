@@ -1,6 +1,7 @@
 // Adsterra banner settings from src/config.js.
 import config from '../config.js';
-import { isLocal } from './util.js';
+import { useSyncExternalStore } from 'react';
+import { isLocal, store } from './util.js';
 
 const ADS = config.ads || {};
 const HOST = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(ADS.scriptHost || '') ? ADS.scriptHost : '';
@@ -29,11 +30,39 @@ export const AD_POPUNDER = (() => {
   } catch { return null; }
 })();
 
+// Ad-free pass: anyone who gives (any amount) stops seeing ads in this browser, for good.
+// Granted only when PayPal reports a completed payment. (v1 passes came from a mere click on a
+// "give" button, so they no longer count.)
+const AD_FREE_KEY = 'fleur-ad-free-v2';
+store.del('fleur-ad-free-v1');
+let adFree = !!store.get(AD_FREE_KEY);
+const adFreeListeners = new Set();
+export function grantAdFree() {
+  if (adFree) return;
+  adFree = true;
+  store.set(AD_FREE_KEY, { since: Date.now() });
+  adFreeListeners.forEach((fn) => fn());
+  // A popunder script can't be unloaded, so reload quietly once they come back from paying.
+  if (popLoaded) {
+    const onBack = () => { if (document.visibilityState === 'visible') location.reload(); };
+    document.addEventListener('visibilitychange', onBack);
+  }
+}
+// Paid in another tab? Pick the pass up here too.
+window.addEventListener('storage', (e) => {
+  if (e.key !== AD_FREE_KEY || !e.newValue || adFree) return;
+  adFree = true;
+  adFreeListeners.forEach((fn) => fn());
+  if (popLoaded) location.reload();
+});
+const subscribeAdFree =(fn) => { adFreeListeners.add(fn); return () => adFreeListeners.delete(fn); };
+export const useAdFree = () => useSyncExternalStore(subscribeAdFree, () => adFree);
+
 // Loads the popunder on the home page and in the studio only. Never on a received bouquet:
 // if one is opened in a tab that already has it, the page reloads without it.
 let popLoaded = false;
 export function popunderFor(view) {
-  if (!AD_POPUNDER || isLocal) return;
+  if (!AD_POPUNDER || isLocal || adFree) return;
   if (view === 'viewer') { if (popLoaded) location.reload(); return; }
   if (popLoaded || (view !== 'home' && view !== 'studio')) return;
   popLoaded = true;
