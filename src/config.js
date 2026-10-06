@@ -56,6 +56,9 @@ const config = {
     scriptHost: 'www.highperformanceformat.com',
     wide: { key: '9d185feea98b985c988a03a08981b457', width: 728, height: 90, src: 'https://bauval.org/22/9d185feea98b985c988a03a08981b457' },
     narrow: { key: '20c4684212bb8ef4a5ac53be3f23a559', width: 320, height: 50, src: 'https://bauval.org/22/20c4684212bb8ef4a5ac53be3f23a559' },
+    // Smartlink: the link from your Adsterra dashboard. Shown as one small "Sponsored" line on the
+    // studio's Send step, never on a bouquet someone receives. Leave empty to turn it off.
+    smartlink: { url: 'https://araplhn.org/4/a4a42b0075222bd52e3e1286ae7d0463' },
   },
 
   // Amazon Associates: the "Make it real" gift shelf on the home page.

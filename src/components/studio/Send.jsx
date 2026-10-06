@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AD_SMARTLINK, useAdFree } from '../../lib/ads.js';
 import { ASSETS } from '../../lib/assets.js';
 import { describe } from '../../lib/bouquet.js';
 import { FONTS, FRAMES, LONG_LINK, RIBBONS, SEALS, paperOf } from '../../lib/constants.js';
@@ -14,6 +15,7 @@ import QrDialog from './QrDialog.jsx';
 /* ---------- 7. send ---------- */
 export default function Send({ state, lock, setLock, onStartOver }) {
   const toast = useToast();
+  const adFree = useAdFree();
   const [showPw, setShowPw] = useState(false);
   const ready = state.stems.length > 0;
   const wrap = byId(ASSETS.wraps, state.wrap);
@@ -120,6 +122,12 @@ export default function Send({ state, lock, setLock, onStartOver }) {
           <p><strong>Enjoyed making this?</strong> Fleur &amp; Note is free, and the bouquets you send never carry ads. A small gift keeps it blooming.</p>
           <Donate />
         </div>
+      )}
+      {AD_SMARTLINK && !adFree && (
+        <p className="sponsored-link">
+          <span className="ad-label">Sponsored</span>
+          <a href={AD_SMARTLINK} target="_blank" rel="nofollow sponsored noopener noreferrer">Explore an offer from our partners →</a>
+        </p>
       )}
       {qrLink && <QrDialog link={qrLink} to={state.card.to} onClose={() => setQrLink(null)} />}
       <button

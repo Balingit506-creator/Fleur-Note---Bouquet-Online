@@ -43,6 +43,14 @@ export const AD_SOCIAL_BAR = (() => {
   } catch { return null; }
 })();
 
+// Smartlink: a plain https link, shown on the Send step.
+export const AD_SMARTLINK = (() => {
+  try {
+    const u = new URL((ADS.smartlink?.url || '').trim());
+    return u.protocol === 'https:' && u.pathname.length > 1 ? u.href : null;
+  } catch { return null; }
+})();
+
 // Ad-free pass: anyone who gives (any amount) stops seeing ads in this browser, for good.
 // Granted only when PayPal reports a completed payment. (v1 passes came from a mere click on a
 // "give" button, so they no longer count.)
