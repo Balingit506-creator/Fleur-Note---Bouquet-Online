@@ -55,7 +55,7 @@ const config = {
     socialBar: { src: 'https://bauval.org/14/9f2281bf9d65189e98bf365e62bbd736' },
     scriptHost: 'www.highperformanceformat.com',
     wide: { key: '9d185feea98b985c988a03a08981b457', width: 728, height: 90, src: 'https://bauval.org/22/9d185feea98b985c988a03a08981b457' },
-    narrow: { key: '', width: 320, height: 50 },
+    narrow: { key: '20c4684212bb8ef4a5ac53be3f23a559', width: 320, height: 50, src: 'https://bauval.org/22/20c4684212bb8ef4a5ac53be3f23a559' },
   },
 
   // Amazon Associates: the "Make it real" gift shelf on the home page.
