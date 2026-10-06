@@ -1,14 +1,49 @@
+import { useEffect, useRef, useState } from 'react';
 import { showDonate, showIdeas } from '../lib/donate.js';
 
 export default function Topbar({ theme, onToggleTheme }) {
   const dark = theme === 'dark';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [heartPops, setHeartPops] = useState(0);
+  const ref = useRef(null);
+
+  // The phone menu closes on navigation, Escape, or a tap anywhere outside the bar.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    const onDown = (e) => { if (!ref.current?.contains(e.target)) close(); };
+    window.addEventListener('hashchange', close);
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onDown);
+    return () => {
+      window.removeEventListener('hashchange', close);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onDown);
+    };
+  }, [menuOpen]);
+
   return (
-    <header className="topbar">
+    <header className="topbar" ref={ref}>
       <a className="brand" href="#" aria-label="Fleur and Note home">
         <img className="brand-mark" src="img/logo.png" alt="" width="40" height="48" />
         <span>Fleur <em>&amp;</em> Note</span>
       </a>
       <nav className="topnav">
+        <div className="navlinks" id="site-menu" data-open={menuOpen} onClick={(e) => { if (e.target.closest('a')) setMenuOpen(false); }}>
+          <a href="#" className="navlink">Home</a>
+          <a href="#studio/occasion" className="navlink">Occasions</a>
+          {showDonate && (
+            <a href="#support" className="navlink nav-support" onClick={() => setHeartPops((n) => n + 1)}>
+              Support us
+              {/* keyed so every click remounts it and replays the hop */}
+              <span className={heartPops ? 'nav-heart pop' : 'nav-heart'} key={heartPops} aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z" /></svg>
+              </span>
+            </a>
+          )}
+          {showIdeas && <a href="#ideas" className="navlink">Suggestions</a>}
+        </div>
         <button
           className="theme-toggle"
           id="theme-toggle"
@@ -26,9 +61,22 @@ export default function Topbar({ theme, onToggleTheme }) {
             <path d="M17 3.5l.5 1.3 1.3.5-1.3.5-.5 1.3-.5-1.3-1.3-.5 1.3-.5z" />
           </svg>
         </button>
-        <a href="#" className="navlink">Home</a>
-        {showIdeas && <a href="#ideas" className="navlink">Ideas</a>}
-        {showDonate && <a href="#support" className="btn btn-small">Support</a>}
+        <a href="#studio/blooms" className="btn btn-small nav-cta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Tie<span className="nav-cta-long"> a bouquet</span>
+        </a>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          aria-controls="site-menu"
+          onClick={() => setMenuOpen((o) => !o)}
+        >
+          <span /><span /><span />
+        </button>
       </nav>
     </header>
   );

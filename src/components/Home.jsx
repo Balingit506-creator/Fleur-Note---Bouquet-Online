@@ -33,7 +33,12 @@ export default function Home({ anchor }) {
           <h1>Flowers that arrive <em>by letter,</em> and never wilt.</h1>
           <p className="lede">Hand-tie a bouquet stem by stem, wrap it in fine paper, seal a letter in wax, and send it as a private link. No account, no checkout, just a gesture.</p>
           <div className="hero-actions">
-            <a href="#studio/blooms" className="btn">Begin a bouquet</a>
+            <a href="#studio/blooms" className="btn btn-begin">
+              <span>Begin a bouquet</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h13M13 6l6 6-6 6" />
+              </svg>
+            </a>
             <a href="#studio/occasion" className="btn btn-ghost">Start from an occasion</a>
           </div>
           <ol className="how">

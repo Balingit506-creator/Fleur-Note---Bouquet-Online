@@ -39,7 +39,8 @@ export default function App() {
   const toast = useCallback((text) => setToastMsg((t) => ({ text, n: t.n + 1 })), []);
 
   /* ---------- the bouquet being made, saved as a draft in this browser ---------- */
-  const [draft, setDraft] = useState(() => sanitize(store.get(DRAFT_KEY)));
+  // Only a reload mid-studio (address is just #studio) picks the draft back up; opening the site starts clean.
+  const [draft, setDraft] = useState(() => (location.hash === '#studio' ? sanitize(store.get(DRAFT_KEY)) : freshState()));
   const [step, setStep] = useState(0);
   const update = useCallback((fn) => setDraft((prev) => {
     const next = structuredClone(prev);
@@ -62,13 +63,21 @@ export default function App() {
       toast('That bouquet link looks incomplete. Here’s the studio instead.');
       replaceHash('#studio');
     }
-    // #studio/blooms → pick flowers yourself; #studio/occasion → start from an arrangement
+    // #studio/blooms → pick flowers yourself; #studio/occasion → start from an arrangement.
+    // Both are "start a new bouquet" links, so they clear whatever was made before.
     if (route.view === 'studio' && route.step) {
       const at = stepIndex(route.step);
-      if (at >= 0) setStep(at);
+      if (at >= 0) {
+        resetDraft();
+        setStep(at);
+        // On one-column layouts the occasion list sits below the stage, so bring it into view.
+        if (route.step === 'occasion' && window.matchMedia('(max-width: 960px)').matches) {
+          requestAnimationFrame(() => document.querySelector('#studio .panel-col')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        }
+      }
       replaceHash('#studio');
     }
-  }, [route, toast, replaceHash]);
+  }, [route, toast, replaceHash, resetDraft]);
 
   const view = route.view === 'bad-link' ? 'studio' : route.view;
   useLayoutEffect(() => {
