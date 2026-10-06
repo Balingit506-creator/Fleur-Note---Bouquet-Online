@@ -40,6 +40,8 @@ function NativeAd({ ad, onFilled }) {
   return mine ? <div className="ad-native" id={ad.containerId} ref={box} /> : null;
 }
 
+const BANNER_EDGE = 10;
+
 /* One ad spot: the native ad when there is one (unless `banner` asks for the banner), else a
    banner. Picks the wide banner where it fits, else the narrow one; on this computer, before
    the banner is set up, it shows a placeholder of the right size instead. */
@@ -52,8 +54,9 @@ export default function AdSlot({ className = '', banner = false }) {
     return () => ro.disconnect();
   }, []);
 
-  const wideFits = AD_WIDE && room >= AD_WIDE.width;
-  const unit = wideFits ? AD_WIDE : AD_NARROW && room >= AD_NARROW.width ? AD_NARROW : null;
+  // a banner's frame adds a thin edge on each side (see .ad-frame-banner)
+  const fits = (u) => u && room >= u.width + BANNER_EDGE;
+  const unit = fits(AD_WIDE) ? AD_WIDE : fits(AD_NARROW) ? AD_NARROW : null;
   const native = !banner && AD_NATIVE;
   const placeholder = isLocal && !AD_WIDE && !AD_NARROW && (room >= 728 ? { width: 728, height: 90 } : { width: 320, height: 50 });
   const [filled, setFilled] = useState(false);
@@ -64,9 +67,9 @@ export default function AdSlot({ className = '', banner = false }) {
 
   return (
     <aside className={`ad-slot ${className}${hidden ? ' ad-waiting' : ''}`} ref={box} aria-label="Advertisement" aria-hidden={hidden || undefined}>
-      <div className={`ad-frame${native ? ' ad-frame-native' : ''}`}>
+      <div className={`ad-frame ${native ? 'ad-frame-native' : 'ad-frame-banner'}`}>
         <span className="ad-label">Advertisement</span>
-        {['tl', 'tr', 'bl', 'br'].map((c) => <Sprig key={c} corner={c} />)}
+        {native && ['tl', 'tr', 'bl', 'br'].map((c) => <Sprig key={c} corner={c} />)}
         {native ? <NativeAd ad={native} onFilled={setFilled} /> : <AdContent unit={unit} placeholder={placeholder} />}
         {waiting && isLocal && <p className="ad-note">Your Adsterra native ad is connected. Ads usually only fill on your registered website, not on localhost.</p>}
       </div>
@@ -91,8 +94,6 @@ function AdContent({ unit, placeholder }) {
         <iframe
           key={unit.key} title="Advertisement" srcDoc={bannerDoc(unit)} width={unit.width} height={unit.height}
           loading="lazy" scrolling="no"
-          // the ad may run its script and open its link in a new tab, but can't touch this page
-          sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
         />
       )}
       {placeholder && (
