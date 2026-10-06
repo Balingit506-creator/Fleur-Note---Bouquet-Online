@@ -5,11 +5,24 @@ import { isLocal, store } from './util.js';
 
 const ADS = config.ads || {};
 const HOST = /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(ADS.scriptHost || '') ? ADS.scriptHost : '';
-const unit = (u) => (u && /^[a-f0-9]{16,64}$/i.test(u.key || '') && u.width > 0 && u.height > 0
-  ? { key: u.key, width: Math.round(u.width), height: Math.round(u.height) } : null);
+// The banner's script: its own src when the code gives a full address, else scriptHost/key/invoke.js.
+const bannerSrc = (u) => {
+  if (u.src) {
+    try {
+      const s = new URL(u.src.trim().startsWith('//') ? `https:${u.src.trim()}` : u.src.trim());
+      return s.protocol === 'https:' ? s.href : null;
+    } catch { return null; }
+  }
+  return HOST ? `https://${HOST}/${u.key}/invoke.js` : null;
+};
+const unit = (u) => {
+  if (!u || !/^[a-f0-9]{16,64}$/i.test(u.key || '') || !(u.width > 0 && u.height > 0)) return null;
+  const src = bannerSrc(u);
+  return src ? { key: u.key, src, width: Math.round(u.width), height: Math.round(u.height) } : null;
+};
 
-export const AD_WIDE = HOST ? unit(ADS.wide) : null;
-export const AD_NARROW = HOST ? unit(ADS.narrow) : null;
+export const AD_WIDE = unit(ADS.wide);
+export const AD_NARROW = unit(ADS.narrow);
 
 // Native Banner: one script that fills a container with that id.
 export const AD_NATIVE = (() => {
@@ -84,6 +97,6 @@ export const showBanner = !!AD_NATIVE && (!!(AD_WIDE || AD_NARROW) || isLocal);
 export function bannerDoc(u) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;overflow:hidden;background:transparent}</style></head><body>
 <script>atOptions = { key: ${JSON.stringify(u.key)}, format: 'iframe', height: ${u.height}, width: ${u.width}, params: {} };</script>
-<script src="https://${HOST}/${u.key}/invoke.js"></script>
+<script src=${JSON.stringify(u.src)}></script>
 </body></html>`;
 }

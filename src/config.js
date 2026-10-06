@@ -36,8 +36,8 @@ const config = {
 
   // Adsterra ads (home page and studio).
   // Banner: from each banner's code in your Adsterra dashboard ("Get code"), copy the 'key' and
-  // the size. scriptHost is the address in the code's src="//…/invoke.js"
-  // (e.g. 'www.highperformanceformat.com').
+  // the size, and the code's script src="…" as 'src'. (Older codes end in …/invoke.js instead: then
+  // leave src empty and put the address part in scriptHost, e.g. 'www.highperformanceformat.com'.)
   //   wide   → shown where there's room, e.g. 728×90
   //   narrow → shown on phones, e.g. 320×50 (leave key empty to use only the wide one)
   // With a native ad set too, the banner gets its own spot on the home page, below the support section.
@@ -54,7 +54,7 @@ const config = {
     // and not on localhost. Leave empty to turn it off.
     socialBar: { src: 'https://bauval.org/14/9f2281bf9d65189e98bf365e62bbd736' },
     scriptHost: 'www.highperformanceformat.com',
-    wide: { key: '', width: 728, height: 90 },
+    wide: { key: '9d185feea98b985c988a03a08981b457', width: 728, height: 90, src: 'https://bauval.org/22/9d185feea98b985c988a03a08981b457' },
     narrow: { key: '', width: 320, height: 50 },
   },
 
