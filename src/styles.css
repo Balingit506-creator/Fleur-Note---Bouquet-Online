@@ -199,7 +199,9 @@ a { color: inherit; }
 .topbar {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px clamp(16px, 4vw, 48px);
+  /* the bar stays full-bleed, but its contents line up with the 1240px page column */
+  --bar-pad: clamp(16px, 4vw, 48px);
+  padding: 14px max(var(--bar-pad), calc((100% - 1240px) / 2 + var(--bar-pad)));
   background: var(--glass); backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(214, 200, 184, .5);
 }

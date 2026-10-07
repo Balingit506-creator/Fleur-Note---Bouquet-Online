@@ -11,6 +11,7 @@
     "art": "node tools/generate-art.js && node tools/build-manifest.js",
     "wraps": "node tools/build-wraps.js satin && node tools/build-manifest.js",
     "logo": "node tools/build-logo.js",
+    "og": "node tools/build-og.js",
     "clean-cutout": "node tools/clean-cutout.js",
     "split-sheet": "node tools/split-sheet.js",
     "setup-tools": "npx playwright install chromium"
